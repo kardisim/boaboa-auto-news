@@ -43,28 +43,36 @@ class TestQualityGuard(unittest.TestCase):
             cleaned["meta_description"],
             "Kementerian PU mempercepat pembangunan fasilitas sanitasi terpadu bagi warga di wilayah Sibolga guna meningkatkan taraf kesehatan lingkungan masyarakat.",
         )
-        # Selalu tepat 2 Core Labels resmi dari 8 daftar baku
-        self.assertEqual(len(cleaned["labels"]), 2)
-        self.assertEqual(cleaned["labels"], ["Berita Sumut", "Hukrimpol"])
+        # 2-4 label standar dari daftar 27 master labels
+        self.assertGreaterEqual(len(cleaned["labels"]), 2)
+        self.assertLessEqual(len(cleaned["labels"]), 4)
+        self.assertIn("Hukrimpol", cleaned["labels"])
+        self.assertIn("Sibolga - Tapteng", cleaned["labels"])
 
     def test_normalize_labels_enforces_core_and_max_two(self):
-        self.assertEqual(len(ALLOWED_LABELS), 8)
-        # Input label acak/kosong selalu dilengkapi menjadi tepat 2 label standar SEO
+        self.assertEqual(len(ALLOWED_LABELS), 27)
+        # Input label acak/kosong selalu dilengkapi menjadi 2-4 label standar SEO
         res_acak = normalize_labels(["Kategori1", "Acak"])
-        self.assertEqual(len(res_acak), 2)
-        self.assertIn("Berita Sumut", res_acak)
+        self.assertGreaterEqual(len(res_acak), 2)
+        self.assertLessEqual(len(res_acak), 4)
+        self.assertIn("Medan", res_acak)
+        self.assertIn("Hukrimpol", res_acak)
 
         res_olahraga = normalize_labels(["Olahraga", "Sepak Bola"])
-        self.assertEqual(len(res_olahraga), 2)
+        self.assertGreaterEqual(len(res_olahraga), 2)
+        self.assertLessEqual(len(res_olahraga), 4)
         self.assertEqual(res_olahraga[0], "Olahraga")
 
         res = normalize_labels(["Adat Batak", "Tapanuli", "Berita Sumut", "Medan"])
-        self.assertEqual(len(res), 2)
-        self.assertEqual(res, ["Budaya & Hata", "Tapanuli"])
+        self.assertGreaterEqual(len(res), 2)
+        self.assertLessEqual(len(res), 4)
+        self.assertIn("Wisata & Kuliner", res)
+        self.assertIn("Taput", res)
 
         # Topik Ekobis
         res_ekobis = normalize_labels(["Sawit", "Pasar"])
-        self.assertEqual(len(res_ekobis), 2)
+        self.assertGreaterEqual(len(res_ekobis), 2)
+        self.assertLessEqual(len(res_ekobis), 4)
         self.assertEqual(res_ekobis[0], "Ekobis")
 
     def test_detects_non_latin_english_overlong_title_and_bad_year(self):
@@ -140,7 +148,7 @@ class TestQualityGuard(unittest.TestCase):
                 "<blockquote><p>Dari hasil pemeriksaan, petugas menemukan enam jeriken berisi Pertalite serta 14 tabung LPG 3 kg - IPTU Dian A. Perdana, Kasat Reskrim Polres Tapteng</p></blockquote>"
                 "<p>Pemeriksaan lanjutan kini dilakukan di Mapolres Tapteng guna menelusuri asal perolehan BBM bersubsidi tersebut dan menindak pihak terkait sesuai ketentuan hukum yang berlaku.</p>"
             ),
-            "labels": ["Hukrimpol", "Tapanuli"],
+            "labels": ["Sibolga - Tapteng", "Hukrimpol"],
         }
         valid, issues = validate_article_quality(good, SAMPLE_SOURCE, published_date="2026-10-25")
         self.assertTrue(valid, msg=f"Seharusnya valid, malah muncul issues: {issues}")
@@ -155,7 +163,7 @@ class TestQualityGuard(unittest.TestCase):
             "title": overlong_title,
             "meta_description": overlong_meta,
             "content": "<p>Pemerintah daerah optimis pembangunan selesai tepat waktu pada akhir tahun ini.</p>",
-            "labels": ["Wisata & Kuliner", "Tapanuli"],
+            "labels": ["Wisata & Kuliner", "Samosir"],
         }
         sanitized = sanitize_article_data(data)
         self.assertLessEqual(len(sanitized["title"]), 72)

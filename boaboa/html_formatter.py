@@ -4,7 +4,7 @@ import re
 
 import requests
 
-from boaboa.config import FALLBACK_IMAGES_BY_TOPIC
+from boaboa.config import FALLBACK_IMAGES_BY_TOPIC, GEO_ALIAS_MAP
 from boaboa.extractor import clean_media_name
 from boaboa.history import title_tokens, titles_similar
 from boaboa.image_generator import generate_contextual_illustration
@@ -244,10 +244,15 @@ def format_final_html(
             f'<a href="{html.escape(real_url, quote=True)}" target="_blank" rel="noopener" style="color:#b45309;text-decoration:underline;">{html.escape(clean_media)}</a>'
             if real_url else html.escape(clean_media)
         )
+        regions_found = [lbl for lbl in labels if lbl in GEO_ALIAS_MAP]
+        region_str = ", ".join(regions_found) if regions_found else "Umum Sumut"
+        labels_str = ", ".join(labels) if labels else "Belum ditentukan"
+
         draft_review_box = (
             '<div class="draft-review-box" style="background:#fffbeb;border:1px solid #f59e0b;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:13px;color:#78350f;">\n'
             '  <div style="font-weight:bold;margin-bottom:6px;font-size:14px;color:#b45309;">Catatan Redaksi (Draf BoaBoa.com / boaboa.bataktive.com)</div>\n'
             '  <ul style="margin:0;padding-left:18px;line-height:1.5;">\n'
+            f'    <li><strong>Label Terpilih:</strong> {html.escape(labels_str)} (Wilayah: {html.escape(region_str)})</li>\n'
             f'    <li><strong>Sumber Referensi:</strong> {ref_link}</li>\n'
             f'    <li><strong>Status Gambar:</strong> {html.escape(resolved_status)}</li>\n'
             f'    <li><strong>Jumlah Kata:</strong> {word_count} kata</li>\n'

@@ -4,45 +4,67 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Bot agregasi, kurasi, dan penulisan ulang berita cerdas berbasis AI untuk portal berita harian cepat se-Sumatera Utara: **[boaboa.bataktive.com](https://boaboa.bataktive.com)**.
+Bot agregasi, kurasi, dan penulisan ulang berita cerdas berbasis AI untuk sentra berita harian Sumatera Utara: **[boaboa.bataktive.com](https://boaboa.bataktive.com)** yang mencakup seluruh 33 kabupaten/kota di Sumatera Utara dan menyeimbangkan distribusi 27 label target (*Label Coverage Balancing*).
 
-Sistem ini memindai berita aktual Sumatera Utara dari berbagai sumber RSS terpercaya, melakukan deduplikasi semantik, menyaring konten, menulis ulang naskah sesuai standar jurnalistik Dewan Pers Indonesia (PUEBI/EYD V), menghasilkan ilustrasi editorial 16:9 via Gemini AI jika foto asli tidak tersedia, dan mengunggah draf artikel ke Google Blogger.
+Sistem ini memindai berita aktual Sumatera Utara dari saluran RSS utama dan saluran terarah per zona wilayah/rubrik, melakukan deduplikasi semantik, menyaring konten, menulis ulang naskah sesuai standar jurnalistik Dewan Pers Indonesia (PUEBI/EYD V), menghasilkan ilustrasi editorial 16:9 via Gemini AI jika foto asli tidak tersedia, dan mengunggah draf artikel ke Google Blogger.
 
 ---
 
 ## 🌟 Fitur Utama & Standar Arsitektur
 
-1. **Mode Publikasi Draft Aman:**
+1. **Mode Publikasi Draft Aman & Kapasitas 8 Draf/Run:**
    - Seluruh artikel dikirim ke Blogger dengan status **Draft** (`PUBLISH_AS_DRAFT = True`), memberikan kendali penuh kepada redaksi manusia untuk peninjauan akhir sebelum tayang.
-   - Maksimal pemrosesan 5 artikel per putaran (`MAX_POSTS_PER_RUN = 5`) untuk menjaga keteraturan dan kualitas terbitan.
-   - Dilengkapi **Kotak Catatan Redaksi** (`draft-review-box`) di baris teratas draf artikel (memuat tautan media sumber rujukan, status gambar, jumlah kata, dan poin cek redaksi) yang dapat dihapus 1-klik sebelum dipublikasikan.
+   - Batas maksimal pemrosesan dinaikkan menjadi **8 artikel per putaran** (`MAX_POSTS_PER_RUN = 8`).
+   - Dilengkapi **Kotak Catatan Redaksi** (`draft-review-box`) di baris teratas draf artikel (memuat daftar label terpilih, cakupan wilayah, tautan sumber rujukan, status gambar, jumlah kata, dan poin cek redaksi) yang dapat dihapus 1-klik sebelum dipublikasikan.
 
-2. **Dukungan 8 Label Baku Blogger boaboa.bataktive.com:**
-   Setiap artikel secara otomatis dipetakan ke tepat 2 label baku yang sinkron dengan navigasi template:
-   - `Berita Sumut`: Berita umum, pemerintahan provinsi, Medan, Deli Serdang, Langkat, Binjai, Tebing Tinggi, Asahan, Batubara, Labuhanbatu, Sergai.
-   - `Tapanuli`: Wilayah Tapanuli Raya (Taput, Toba, Samosir, Humbahas, Tapteng, Sibolga, Dairi, Pakpak Bharat, Tabagsel, Nias).
-   - `Hukrimpol`: Berita hukum, kriminalitas, kepolisian daerah, kecelakaan lalu lintas, bencana, pengadilan, dan politik daerah.
-   - `Ekobis`: Ekonomi, bisnis, perbankan, pasar, inflasi, perkebunan kelapa sawit, karet, pertanian, komoditas, dan UMKM.
-   - `Wisata & Kuliner`: Destinasi Danau Toba, Berastagi, Bukit Lawang, serta kuliner khas Medan dan daerah.
-   - `Olahraga`: Sepak bola daerah, PSMS Medan (Ayam Kinantan), Stadion Teladan, PON Sumut, dan atlet daerah.
-   - `Budaya & Hata`: Adat istiadat, tradisi, kain ulos, aksara Batak, bahasa daerah (Hata), Melayu Deli, dan sejarah lokal.
-   - `Ototekno`: Otomotif, kendaraan listrik, kelistrikan (PLN Sumut), teknologi, dan inovasi digital regional.
+2. **Dukungan 27 Label Baku & Cakupan 33 Kabupaten/Kota Sumut:**
+   Setiap artikel secara otomatis diklasifikasikan ke dalam **2 hingga 4 label** dari 27 label baku berikut:
+   - **Institusional (2):** `Polda Sumut`, `Kejati Sumut`
+   - **Rubrik Tematik (7):** `Kriminalitas`, `Politik`, `Ekobis`, `Wisata & Kuliner`, `Olahraga`, `Ototekno`, `Hukrimpol`
+   - **Klaster Wilayah 33 Kabupaten/Kota Sumut (18):**
+     1. `Medan` (Kota Medan, Belawan, Marelan, Amplas, Helvetia)
+     2. `Deli Serdang` (Lubuk Pakam, Tanjung Morawa, Percut Sei Tuan, Sunggal, Pancur Batu, Kualanamu)
+     3. `Binjai` (Kota Binjai)
+     4. `Langkat` (Stabat, Tanjung Pura, Pangkalan Brandan, Besitang, Bahorok, Bukit Lawang)
+     5. `Tebing Tinggi` (Kota Tebing Tinggi, Serdang Bedagai/Sergai, Sei Rampah, Perbaungan)
+     6. `Pematangsiantar` (Kota Pematangsiantar / Siantar)
+     7. `Simalungun` (Pematang Raya, Parapat, Perdagangan, Tanah Jawa, Saribudolok, Tigaras)
+     8. `Karo` (Kabanjahe, Berastagi, Tigapanah, Merek, Sinabung, Gundaling)
+     9. `Dairi` (Sidikalang, Pakpak Bharat, Salak, Sumbul, Tigalingga)
+     10. `Samosir` (Pangururan, Tomok, Tuktuk, Simanindo, Nainggolan, Palipi, Pusuk Buhit)
+     11. `Toba` (Balige, Laguboti, Porsea, Ajibata, Lumban Julu, Sigumpar)
+     12. `Taput` (Tapanuli Utara, Tarutung, Siborongborong, Silangit, Pahae, Sipoholon, Muara)
+     13. `Humbahas` (Humbang Hasundutan, Doloksanggul, Lintongnihuta, Baktiraja, Pollung)
+     14. `Sibolga - Tapteng` (Kota Sibolga, Tapanuli Tengah, Pandan, Barus, Pinangsori, Sorkam)
+     15. `Asahan` (Kisaran, Batubara, Limapuluh, Indrapura, Tanjungbalai)
+     16. `Labuhanbatu` (Rantauprapat, Labura/Aek Kanopan, Labusel/Kotapinang)
+     17. `Nias` (Gunungsitoli, Nias Selatan/Teluk Dalam, Nias Utara, Nias Barat)
+     18. `Tapsel` (Tapanuli Selatan/Sipirok, Padangsidimpuan, Mandailing Natal/Madina/Panyabungan, Palas/Sibuhuan, Paluta/Gunung Tua)
 
-3. **Mesin AI Dual-Engine (Gemini API & Groq Fallback):**
+3. **Penyeimbang Kuota Label (*Label Coverage Balancing & Greedy Diversity*):**
+   - **Label Deficit Priority:** Menghitung frekuensi kemunculan masing-masing label pada 150 riwayat terakhir di `posted_history.json`. Label yang masih berfrekuensi `0` atau sedikit mendapatkan bonus skor prioritas tinggi.
+   - **Targeted Query Feed Rotation:** Memuat feed utama ditambah rotasi feed query Google News berdasarkan zona wilayah dan rubrik khusus yang mengalami defisit.
+   - **Greedy Diversity Selection:** Memilih 8 kandidat teratas dengan penalti in-memory sementara untuk label yang baru saja terpilih dalam batch yang sama agar dalam 1 kali eksekusi tidak didominasi satu wilayah/rubrik saja.
+
+4. **Aturan Klasifikasi Multi-Label & Relasi Hukrimpol:**
+   - Komposisi wajib 2–4 label: 1–2 Label Wilayah + 1 Rubrik Utama.
+   - **Aturan Wajib `Hukrimpol`:** Jika artikel menyangkut `Kriminalitas`, `Politik`, `Polda Sumut`, atau `Kejati Sumut`, artikel wajib menyertakan label `Hukrimpol`.
+
+5. **Mesin AI Dual-Engine (Gemini API & Groq Fallback):**
    - **Primary Engine:** Google Gemini API (`gemini-3.8-flash` via SDK `google-genai`) dengan fallback model otomatis (`gemini-2.0-flash`, `gemini-1.5-flash`).
    - **Secondary Engine:** Groq API (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, dsb.) dengan penanganan format reasoning tersembunyi.
-   - Mekanisme **Self-Healing Repair Pass**: Jika validator mendeteksi catatan kualitas (kebocoran bahasa asing, angka tanpa dasar sumber, atau judul melampaui batas), sistem melakukan pass perbaikan otomatis sebelum memutuskan hasil akhir.
+   - **Self-Healing Repair Pass:** Menjalankan penyuntingan otomatis jika validator mendeteksi catatan kualitas sebelum memutuskan hasil akhir.
 
-4. **Penanganan Gambar & Fallback Ilustrasi Editorial 16:9:**
-   - Validasi ketat terhadap gambar sumber asli (resolusi lebar minimal `300px`, pembersihan watermark portal komersial seperti Detik, Kompas, Kumparan, Tribun).
-   - Jika sumber tidak memuat foto liputan yang valid, sistem secara otomatis menerjemahkan konteks berita menjadi prompt visual netral (bebas filter kekerasan/kriminalitas dan **tanpa teks** di dalam gambar), lalu menghasilkan gambar editorial 16:9 via Gemini Imagen 3 / Pollinations Flux.
-   - Gambar disimpan ke direktori `generated_images/` dalam format `.jpg` terkompresi Pillow dan dilayani via CDN publik jsDelivr:
+6. **Penanganan Gambar & Fallback Ilustrasi Editorial 16:9:**
+   - Validasi ketat terhadap gambar sumber asli (resolusi lebar minimal `300px`, pembersihan watermark portal komersial).
+   - Fallback otomatis pembuatan ilustrasi kontekstual 16:9 via Gemini Imagen 3 / Pollinations Flux (bebas teks dan filter kriminalitas netral).
+   - Gambar tersimpan di `generated_images/` dan disajikan lewat CDN publik jsDelivr:
      `https://cdn.jsdelivr.net/gh/{GITHUB_REPOSITORY}@main/generated_images/{filename}`.
 
-5. **Anti-Duplikasi & Filter Kualitas Jurnalistik:**
+7. **Anti-Duplikasi & Filter Dewan Pers:**
    - **Semantic Deduplication:** Pengecekan Jaccard similarity & token overlap (ambang batas `>= 0.60`) terhadap riwayat 100 entri terakhir di `posted_history.json`.
-   - **Multi-Source Story Clustering:** Mengelompokkan liputan dari berbagai media berbeda untuk peristiwa yang sama menjadi satu masukan artikel yang komprehensif.
-   - **Etika Dewan Pers:** Penegakan asas praduga tak bersalah (*presumption of innocence*) untuk berita kriminal/hukum (`Hukrimpol`), larangan tegas terhadap blok "Baca Juga" fiktif, serta penghapusan frasa klise AI.
+   - **Multi-Source Story Clustering:** Menggabungkan fakta dari berbagai media berbeda untuk peristiwa yang sama.
+   - **Etika Jurnalistik:** Penegakan asas praduga tak bersalah (*presumption of innocence*), larangan tegas terhadap blok "Baca Juga" fiktif, serta penghapusan frasa klise AI.
 
 ---
 
@@ -55,13 +77,13 @@ boaboa-auto-news/
 │       └── auto_news.yml        # Workflow GitHub Actions (terjadwal setiap 3 jam, menit 25)
 ├── boaboa/
 │   ├── __init__.py
-│   ├── config.py                # Konfigurasi, daftar 8 label baku, RSS terkurasi, dan batas sistem
+│   ├── config.py                # Konfigurasi, 27 label baku, GEO_ALIAS_MAP, TOPIC_KEYWORD_MAP, TARGETED_QUERY_FEEDS
 │   ├── extractor.py             # Ekstraksi konten artikel, dewatermarking, dan deteksi foto liputan
-│   ├── history.py               # Penyimpanan riwayat & algoritma anti-duplikasi semantik (Jaccard)
-│   ├── html_formatter.py        # Pemformatan HTML semantik, draft-review-box, dan atribusi
+│   ├── history.py               # Riwayat riwayat artikel, label counts, dan anti-duplikasi semantik (Jaccard)
+│   ├── html_formatter.py        # Pemformatan HTML semantik, draft-review-box berlabel, dan atribusi
 │   ├── image_generator.py       # Pembuatan ilustrasi AI editorial 16:9 & kompresi ke folder lokal
-│   ├── quality_guard.py         # Quality gate, pembersih dateline/byline, dan pemeriksa Dewan Pers
-│   ├── relevance.py             # Penilaian relevansi berita Sumatera Utara & clustering peristiwa
+│   ├── quality_guard.py         # Quality gate, normalisasi multi-label 2-4, dan pemeriksa Dewan Pers
+│   ├── relevance.py             # Deteksi kandidat label awal, scoring wilayah/rubrik & clustering peristiwa
 │   └── writer.py                # Redaktur AI: penulisan ulang naskah & self-healing repair pass
 ├── generated_images/
 │   └── .gitkeep                 # Folder penampung gambar hasil generate AI
@@ -141,7 +163,7 @@ Agar bot dapat berjalan otomatis di GitHub Actions, atur konfigurasi berikut di 
 | `BLOGGER_BLOG_ID` | `8826247154815720532` | ID Blog Blogger boaboa.bataktive.com |
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Model Gemini yang digunakan |
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Model Groq yang digunakan |
-| `MAX_POSTS_PER_RUN`| `5` | Batas maksimum artikel per run |
+| `MAX_POSTS_PER_RUN`| `8` | Batas maksimum artikel per run |
 
 ---
 

@@ -94,6 +94,24 @@ class TestHistory(unittest.TestCase):
         self.assertTrue(is_dup)
         self.assertIn("semantik", reason.lower())
 
+    def test_get_label_counts_tracks_all_allowed_labels(self):
+        from boaboa.config import ALLOWED_LABELS
+        from boaboa.history import get_label_counts
+
+        history = [
+            make_history_record("https://n1", "https://m1", "Judul 1", "Media 1", labels=["Medan", "Ekobis"]),
+            make_history_record("https://n2", "https://m2", "Judul 2", "Media 2", labels=["Toba", "Wisata & Kuliner"]),
+            {"labels": ["Medan", "Hukrimpol"]},
+        ]
+        counts = get_label_counts(history)
+        self.assertEqual(len(counts), len(ALLOWED_LABELS))
+        self.assertEqual(counts["Medan"], 2)
+        self.assertEqual(counts["Ekobis"], 1)
+        self.assertEqual(counts["Toba"], 1)
+        self.assertEqual(counts["Wisata & Kuliner"], 1)
+        self.assertEqual(counts["Hukrimpol"], 1)
+        self.assertEqual(counts["Nias"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

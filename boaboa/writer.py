@@ -232,17 +232,13 @@ def _build_system_instruction() -> str:
         "     * Pertahankan kata kunci entitas lokasi (Sumut, Medan, Samosir, Simalungun, Sibolga, Tarutung, Toba, Sergai, Dairi, Langkat, dll.) dan subjek berita di dalam judul.\n"
         f"     * Panjang judul wajib tepat {SEO_TITLE_IDEAL_MIN}–{SEO_TITLE_IDEAL_MAX} karakter (maksimal mutlak {SEO_TITLE_MAX_CHARS} karakter).\n"
         "   - LARANGAN CLICKBAIT MURAHAN: Wajib 100% faktual berdasarkan naskah sumber. DILARANG memakai kata pembodohan seperti 'Bikin Syok', 'Ini Faktanya', 'Gak Nyangka', 'Viral', atau tanda tanya sensasional.\n"
-        "9. 8 LABEL BAKU BLOGGER BOABOA (PILIH 1 HINGGA MAKSIMAL 2 LABEL SAJA):\n"
-        f"   - Pilih 1 hingga maksimal 2 label HANYA dari 8 label baku berikut: [{labels_str}].\n"
-        "   - Panduan pemetaan:\n"
-        "     * 'Hukrimpol' untuk hukum, kriminalitas, kepolisian, kecelakaan, bencana, dan politik daerah.\n"
-        "     * 'Ekobis' untuk ekonomi, bisnis, UMKM, pertanian, perkebunan sawit, dan pasar.\n"
-        "     * 'Olahraga' untuk sepak bola, PSMS Medan, PON, dan atlet Sumut.\n"
-        "     * 'Wisata & Kuliner' untuk destinasi Danau Toba, Berastagi, dan kuliner khas daerah.\n"
-        "     * 'Budaya & Hata' untuk adat, tradisi, ulos, bahasa daerah, dan sejarah lokal.\n"
-        "     * 'Ototekno' untuk otomotif, teknologi, kelistrikan, dan inovasi digital.\n"
-        "     * 'Tapanuli' untuk wilayah Tapanuli Raya, Samosir, Toba, Humbahas, Tapteng, Sibolga, Dairi, Tabagsel, Nias.\n"
-        "     * 'Berita Sumut' untuk Medan, Deli Serdang, Pantai Timur, Dataran Tinggi, dan Sumut umum.\n"
+        "9. 27 LABEL BAKU BLOGGER BOABOA (PILIH 2 HINGGA MAKSIMAL 4 LABEL):\n"
+        f"   - Pilih 2 hingga 4 label HANYA dari 27 label baku berikut: [{labels_str}].\n"
+        "   - Komposisi label yang wajib dipenuhi:\n"
+        "     * 1–2 Label Wilayah: Berdasarkan lokasi kejadian utama di Sumatera Utara (Medan, Deli Serdang, Binjai, Langkat, Tebing Tinggi, Pematangsiantar, Simalungun, Karo, Dairi, Samosir, Toba, Taput, Humbahas, Sibolga - Tapteng, Asahan, Labuhanbatu, Nias, Tapsel).\n"
+        "     * 1 Label Rubrik Utama: Kriminalitas, Politik, Ekobis, Wisata & Kuliner, Olahraga, Ototekno, atau Hukrimpol.\n"
+        "     * ATURAN WAJIB Hukrimpol: Jika artikel berlabel 'Kriminalitas', 'Politik', 'Polda Sumut', atau 'Kejati Sumut', WAJIB menyertakan label 'Hukrimpol'.\n"
+        "     * Label Institusional (Opsional): Sertakan 'Polda Sumut' jika melibatkan Polda Sumut/Polres jajaran di Sumut, atau 'Kejati Sumut' jika melibatkan Kejati Sumut/Kejari jajaran di Sumut.\n"
         "10. PROMPT FOTO ILUSTRASI KONTEKSTUAL (image_prompt):\n"
         "    Tulis 1 kalimat deskripsi prompt visual dalam Bahasa Inggris (15-25 kata) untuk membuat foto ilustrasi jurnalistik yang aman dan relevan di Sumatera Utara.\n"
         "11. FORMAT OUTPUT: Tentukan 'hook_angle' terlebih dahulu sebelum menulis 'title'. Keluarkan HANYA JSON valid dengan kunci tepat:\n"
@@ -252,7 +248,7 @@ def _build_system_instruction() -> str:
         '  "executive_summary": "2 kalimat utuh inti 5W+1H yang padat tanpa mengulang judul",\n'
         '  "lead_paragraph": "Paragraf pembuka 2-3 kalimat padat langsung ke fakta utama",\n'
         '  "body_html": "<h2>Subjudul</h2><p>Paragraf isi...</p><p>Konteks lokal...</p>",\n'
-        '  "labels": ["Label 1", "Label 2"],\n'
+        '  "labels": ["Label Wilayah", "Rubrik Utama", "Hukrimpol"],\n'
         '  "photo_caption": "Keterangan foto jurnalistik yang ringkas dan informatif",\n'
         '  "editorial_notes": "Catatan hal penting yang perlu diverifikasi redaktur sebelum publish",\n'
         f'  "meta_description": "Deskripsi penelusuran SEO ({META_DESC_IDEAL_MIN}-{META_DESC_IDEAL_MAX} karakter)",\n'
@@ -281,7 +277,7 @@ def _repair_article(
         "- DILARANG memakai judul klise siaran pers ('Dorong...', 'Masih Sesuai Tahapan', 'Tekankan...', dll.). Pastikan 'title' memiliki HOOK jurnalistik bertaring (kontras/solusi risiko/aksi terobosan) sepanjang 50–65 karakter serta memuat entitas lokasi/subjek untuk SEO.\n"
         f"- Pastikan 'meta_description' sepanjang {META_DESC_IDEAL_MIN}–{META_DESC_IDEAL_MAX} karakter.\n"
         "- Jangan memakai tag <h1>, <script>, <iframe>, atau JSON-LD di dalam 'content'/'body_html', serta jangan menulis awalan 'BoaBoa.com -' atau 'Bataktive.com -'.\n"
-        f"- Pastikan 'labels' berjumlah 1 hingga maksimal 2 label HANYA dari 8 label baku: [{labels_str}].\n"
+        f"- Pastikan 'labels' berjumlah 2 hingga maksimal 4 label HANYA dari 27 label baku: [{labels_str}], dan wajib sertakan 'Hukrimpol' jika memuat kriminalitas/politik/polda/kejati.\n"
         "- Sertakan 'image_prompt' dalam Bahasa Inggris (15-25 kata) untuk ilustrasi foto jurnalistik yang relevan.\n"
         "- Pastikan ada 'lead_paragraph' dan 'body_html'.\n"
         "- Keluarkan HANYA JSON valid dengan kunci 'title', 'executive_summary', 'lead_paragraph', 'body_html', 'meta_description', 'image_prompt', 'labels', 'photo_caption', 'editorial_notes'."

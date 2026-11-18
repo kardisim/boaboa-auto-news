@@ -20,14 +20,14 @@ HISTORY_MAX_ITEMS = 600
 MIN_SOURCE_CHARS = 450
 MIN_SOURCE_SENTENCES = 3
 MAX_SOURCE_CHARS = 9500
-MAX_POSTS_PER_RUN = int(os.environ.get("MAX_POSTS_PER_RUN", "5"))
+MAX_POSTS_PER_RUN = int(os.environ.get("MAX_POSTS_PER_RUN", "8"))
 MAX_CANDIDATES_PER_FEED = 4
 MIN_RELEVANCE_SCORE = 1
 MIN_IMAGE_WIDTH = 300
 
-# Standar SEO & Jurnalistik Dewan Pers boaboa.bataktive.com
-MIN_LABELS_PER_POST = 1
-MAX_LABELS_PER_POST = 2
+# Standar SEO & Jurnalistik Dewan Pers boaboa.bataktive.com (2-4 label per post)
+MIN_LABELS_PER_POST = 2
+MAX_LABELS_PER_POST = 4
 SEO_TITLE_MIN_CHARS = 25
 SEO_TITLE_IDEAL_MIN = 50
 SEO_TITLE_IDEAL_MAX = 65
@@ -50,344 +50,282 @@ GROQ_MODEL_PRIORITY = [
     "openai/gpt-oss-20b",
 ]
 
-# Saluran RSS Terkurasi Berdasarkan Tier Prioritas untuk Portal Berita Harian Cepat Sumatera Utara
+# Daftar Persis 27 Label Baku Blogger boaboa.bataktive.com
+ALLOWED_LABELS = [
+    # Institusional (2)
+    "Polda Sumut",
+    "Kejati Sumut",
+    # Rubrik Tematik (7)
+    "Kriminalitas",
+    "Politik",
+    "Ekobis",
+    "Wisata & Kuliner",
+    "Olahraga",
+    "Ototekno",
+    "Hukrimpol",
+    # Klaster Wilayah 33 Kabupaten/Kota Sumut (18)
+    "Medan",
+    "Deli Serdang",
+    "Binjai",
+    "Langkat",
+    "Tebing Tinggi",
+    "Pematangsiantar",
+    "Simalungun",
+    "Karo",
+    "Dairi",
+    "Samosir",
+    "Toba",
+    "Taput",
+    "Humbahas",
+    "Sibolga - Tapteng",
+    "Asahan",
+    "Labuhanbatu",
+    "Nias",
+    "Tapsel",
+]
+
+# Kamus Pemetaan Kata Kunci 33 Kabupaten/Kota di Sumatera Utara ke 18 Klaster Wilayah Baku
+GEO_ALIAS_MAP = {
+    "Medan": ["medan", "belawan", "marelan", "amplas", "helvetia", "polrestabes medan", "pemko medan"],
+    "Deli Serdang": ["deli serdang", "deliserdang", "lubuk pakam", "tanjung morawa", "percut sei tuan", "sunggal", "pancur batu", "kualanamu", "namorambe", "galang"],
+    "Binjai": ["binjai", "pemko binjai", "polres binjai"],
+    "Langkat": ["langkat", "stabat", "tanjung pura", "pangkalan brandan", "besitang", "bahorok", "bukit lawang", "kuala", "sei bingai"],
+    "Tebing Tinggi": ["tebing tinggi", "serdang bedagai", "sergai", "sei rampah", "perbaungan", "dolok masihul", "tanjung beringin", "bandar khalipah"],
+    "Pematangsiantar": ["pematangsiantar", "pematang siantar", "siantar", "pemko siantar", "polres pematangsiantar"],
+    "Simalungun": ["simalungun", "parapat", "pematang raya", "raya", "perdagangan", "tanah jawa", "saribudolok", "bosar maligas", "girsang sipangan bolon", "tigaras"],
+    "Karo": ["karo", "tanah karo", "kabanjahe", "berastagi", "tigapanah", "merek", "sinabung", "lau kawar", "gundaling"],
+    "Dairi": ["dairi", "sidikalang", "pakpak bharat", "salak", "sumbul", "tigalingga", "parbuluan"],
+    "Samosir": ["samosir", "pangururan", "tomok", "tuktuk", "simanindo", "nainggolan", "palipi", "onan runggu", "sianjur mula-mula", "pusuk buhit"],
+    "Toba": ["toba", "balige", "laguboti", "porsea", "ajibata", "lumban julu", "sigumpar", "silaen", "habinsaran"],
+    "Taput": ["tapanuli utara", "taput", "tarutung", "siborongborong", "silangit", "pahae", "sipoholon", "muara", "adiankoting"],
+    "Humbahas": ["humbang hasundutan", "humbahas", "doloksanggul", "dolok sanggul", "lintongnihuta", "baktiraja", "pollung", "paranginan", "pakkat"],
+    "Sibolga - Tapteng": ["sibolga", "tapanuli tengah", "tapteng", "pandan", "barus", "pinangsori", "sorkam", "tukka", "badiri"],
+    "Asahan": ["asahan", "kisaran", "batubara", "batu bara", "limapuluh", "lima puluh", "indrapura", "tanjungbalai", "tanjung balai", "air joman", "simpang empat"],
+    "Labuhanbatu": ["labuhanbatu", "rantauprapat", "rantau prapat", "labuhanbatu utara", "labura", "aek kanopan", "kualuh", "labuhanbatu selatan", "labusel", "kotapinang", "kota pinang", "torgamba", "bilah"],
+    "Nias": ["nias", "gunungsitoli", "gunung sitoli", "nias selatan", "nisel", "teluk dalam", "telukdalam", "nias utara", "nisut", "lotu", "lahewa", "nias barat", "nisbar", "lahomi", "sirombu", "kepulauan batu"],
+    "Tapsel": ["tapanuli selatan", "tapsel", "sipirok", "batang toru", "padangsidimpuan", "padang sidimpuan", "mandailing natal", "madina", "panyabungan", "natal", "kotanopan", "padang lawas", "palas", "sibuhuan", "padang lawas utara", "paluta", "gunung tua", "tabagsel"],
+}
+
+# Kamus Pemetaan Kata Kunci Rubrik & Institusi
+TOPIC_KEYWORD_MAP = {
+    "Polda Sumut": [
+        "polda sumut", "kapolda sumut", "wakapolda sumut", "ditreskrimum polda sumut",
+        "ditreskrimsus polda sumut", "ditresnarkoba polda sumut", "bidhumas polda sumut",
+        "propam polda sumut", "polrestabes medan", "polres pelabuhan belawan",
+    ],
+    "Kejati Sumut": [
+        "kejati sumut", "kajati sumut", "kejaksaan tinggi sumatera utara", "kejari medan",
+        "kejari", "kejaksaan negeri",
+    ],
+    "Kriminalitas": [
+        "kriminal", "kriminalitas", "pembunuhan", "begal", "curanmor", "curat", "curas",
+        "narkoba", "sabu", "ganja", "ekstasi", "judi", "judol", "judi online",
+        "penganiayaan", "perampokan", "penipuan", "korupsi", "pungli", "tangkap",
+        "ditangkap", "tersangka", "pelaku kejahatan", "pelaku kriminal", "tahanan", "diringkus", "vonis",
+        "lapas", "rutan", "razia", "aniaya", "maling", "pencurian", "jambret",
+    ],
+    "Politik": [
+        "politik", "pilkada", "pemilu", "pilgub", "pilbup", "pilwalkot", "kpu", "bawaslu",
+        "dprd", "dprd sumut", "partai", "caleg", "fraksi", "politisi", "koalisi",
+    ],
+    "Ekobis": [
+        "ekobis", "ekonomi", "bisnis", "pasar", "inflasi", "perbankan", "bank", "umkm",
+        "sawit", "kelapa sawit", "karet", "kopi", "pertanian", "perkebunan", "petani",
+        "komoditas", "investasi", "industri", "pelabuhan", "ekspor", "impor", "harga pangan",
+        "beras", "apbd", "keuangan",
+    ],
+    "Wisata & Kuliner": [
+        "wisata", "pariwisata", "kuliner", "destinasi", "hotel", "danau toba", "berastagi",
+        "bukit lawang", "tangkahan", "andaliman", "arsik", "saksang", "naniura", "durian",
+        "bika ambon", "kopi sidikalang", "kopi lintong", "festival", "turis", "kaldera",
+        "parapat", "tuktuk", "tomok", "lontong medan",
+    ],
+    "Olahraga": [
+        "olahraga", "sport", "sports", "sepak bola", "sepakbola", "bola", "psms",
+        "psms medan", "ayam kinantan", "liga 2", "liga 3", "pon", "pon sumut", "atlet",
+        "atlet sumut", "stadion teladan", "stadion baharoeddin", "koni", "koni sumut",
+        "futsal", "bulutangkis", "badminton", "wushu", "gulat", "tinju", "renang",
+    ],
+    "Ototekno": [
+        "ototekno", "otomotif", "teknologi", "motor", "mobil", "kendaraan listrik", "ev",
+        "gadget", "smartphone", "aplikasi", "internet", "digital", "pln", "pln sumut",
+        "telkomsel", "inovasi", "startup",
+    ],
+    "Hukrimpol": [
+        "hukum", "polisi", "polres", "polsek", "polrestabes", "pengadilan", "laka lantas",
+        "kecelakaan", "tabrakan", "kebakaran", "longsor", "banjir", "bencana",
+    ],
+}
+
+# Saluran RSS Utama Berdasarkan Tier
 RSS_URLS = [
-    # Tier 1 (Prioritas Utama): Berita Resmi Pemprov Sumut, Antara Sumut, Pemko Medan & Polda Sumut
     {
         "name": "Tier 1 - Pemprov Sumut, Polda Sumut & Antara Sumut",
         "url": "https://news.google.com/rss/search?q=(%22Pemprov+Sumut%22+OR+%22Pemerintah+Provinsi+Sumatera+Utara%22+OR+%22Gubernur+Sumut%22+OR+%22Polda+Sumut%22+OR+%22Pemko+Medan%22+OR+site:antaranews.com/sumut+OR+%22Antara+Sumut%22)+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 5,
         "tier": 1,
     },
-    # Tier 1 (Wilayah Tapanuli Raya & Danau Toba): Taput, Toba, Samosir, Humbahas, Tapteng, Sibolga, Dairi, Pakpak Bharat
     {
         "name": "Tier 1 - Pemkab Tapanuli Raya & Danau Toba",
         "url": "https://news.google.com/rss/search?q=((%22Pemkab+Taput%22+OR+%22Pemkab+Toba%22+OR+%22Pemkab+Samosir%22+OR+%22Pemkab+Humbahas%22+OR+%22Pemkab+Tapteng%22+OR+%22Pemkab+Dairi%22+OR+%22Pemkab+Pakpak+Bharat%22+OR+%22Pemko+Sibolga%22+OR+%22Tapanuli+Utara%22+OR+%22Toba+Samosir%22+OR+%22Humbang+Hasundutan%22+OR+%22Tapanuli+Tengah%22+OR+%22Tapanuli+Selatan%22+OR+Padangsidimpuan+OR+Nias))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 5,
         "tier": 1,
     },
-    # Tier 1 (Wilayah Aglomerasi Medan, Pantai Timur & Dataran Tinggi): Deli Serdang, Langkat, Binjai, Karo, Simalungun, Siantar, Asahan
     {
         "name": "Tier 1 - Medan, Pantai Timur & Simalungun-Karo",
         "url": "https://news.google.com/rss/search?q=((%22Deli+Serdang%22+OR+Langkat+OR+Binjai+OR+%22Pemkab+Karo%22+OR+%22Pemkab+Simalungun%22+OR+%22Pemko+Pematangsiantar%22+OR+Asahan+OR+Batubara+OR+Tanjungbalai+OR+Labuhanbatu)+AND+(pemerintah+OR+proyek+OR+pelayanan+OR+masyarakat))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 4,
         "tier": 1,
     },
-    # Tier 2 (Hukrimpol Sumut): Berita hukum, kriminalitas, kepolisian daerah, kecelakaan, pengadilan & peristiwa
     {
         "name": "Tier 2 - Hukrimpol Sumatera Utara",
         "url": "https://news.google.com/rss/search?q=((%22Polda+Sumut%22+OR+%22Polrestabes+Medan%22+OR+%22Polres%22+OR+%22Kejati+Sumut%22+OR+%22Kejari%22+OR+%22Pengadilan+Negeri%22)+AND+(Medan+OR+Sumut+OR+Tapanuli+OR+Siantar+OR+Simalungun+OR+Langkat+OR+Asahan+OR+Nias)+AND+(tangkap+OR+narkoba+OR+tersangka+OR+begal+OR+judi+OR+korupsi+OR+kecelakaan+OR+sidang+OR+razia))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 4,
         "tier": 2,
     },
-    # Tier 2 (Ekobis Sumut): Ekonomi, bisnis, perbankan, perkebunan sawit, UMKM & harga pangan daerah
     {
         "name": "Tier 2 - Ekobis & Pertanian Sumatera Utara",
         "url": "https://news.google.com/rss/search?q=((%22Sumatera+Utara%22+OR+Sumut+OR+Medan+OR+Tapanuli)+AND+(ekonomi+OR+bisnis+OR+pasar+OR+inflasi+OR+umkm+OR+sawit+OR+karet+OR+kopi+OR+pertanian+OR+investasi+OR+pelabuhan+OR+perdagangan))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 3,
         "tier": 2,
     },
-    # Tier 2 (Olahraga Sumut): PSMS Medan, atlet Sumut, PON, stadion & prestasi olahraga daerah
     {
         "name": "Tier 2 - Olahraga Sumatera Utara",
         "url": "https://news.google.com/rss/search?q=((%22PSMS+Medan%22+OR+%22PSMS%22+OR+%22atlet+Sumut%22+OR+%22PON+Sumut%22+OR+%22Stadion+Teladan%22+OR+%22KONI+Sumut%22+OR+(%22olahraga%22+AND+(Medan+OR+Sumut+OR+Simalungun+OR+Tapanuli))))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 3,
         "tier": 2,
     },
-    # Tier 2 (Wisata & Kuliner): Destinasi Danau Toba, Berastagi, kuliner khas Medan/Sumut
     {
         "name": "Tier 2 - Wisata & Kuliner Sumatera Utara",
         "url": "https://news.google.com/rss/search?q=((%22Danau+Toba%22+OR+Samosir+OR+Parapat+OR+Berastagi+OR+%22Bukit+Lawang%22+OR+Tangkahan+OR+%22Kuliner+Medan%22+OR+Andaliman+OR+%22Kopi+Sidikalang%22)+AND+(wisata+OR+destinasi+OR+kuliner+OR+hotel+OR+festival+OR+turis))+when:24h&hl=id&gl=ID&ceid=ID:id",
         "base_score": 3,
         "tier": 2,
     },
-    # Tier 2 (Budaya & Hata): Budaya Batak, Melayu Deli, Karo, Nias, tradisi & bahasa daerah
-    {
-        "name": "Tier 2 - Budaya & Hata Daerah",
-        "url": "https://news.google.com/rss/search?q=((%22Budaya+Batak%22+OR+%22Adat+Batak%22+OR+Ulos+OR+%22Melayu+Deli%22+OR+%22Adat+Karo%22+OR+%22Budaya+Nias%22+OR+%22Bahasa+Batak%22+OR+Aksara)+AND+(tradisi+OR+budaya+OR+sejarah+OR+kesenian+OR+upacara))+when:24h&hl=id&gl=ID&ceid=ID:id",
-        "base_score": 3,
-        "tier": 2,
-    },
-    # Tier 3 (Ototekno & Inovasi Daerah): Otomotif, teknologi, infrastruktur digital & energi Sumut
-    {
-        "name": "Tier 3 - Ototekno & Inovasi Daerah",
-        "url": "https://news.google.com/rss/search?q=((Medan+OR+Sumut+OR+%22Sumatera+Utara%22)+AND+(otomotif+OR+teknologi+OR+%22kendaraan+listrik%22+OR+%22PLN+Sumut%22+OR+digital+OR+internet+OR+aplikasi+OR+inovasi))+when:24h&hl=id&gl=ID&ceid=ID:id",
-        "base_score": 2,
-        "tier": 3,
-    },
 ]
 
-# Daftar 8 Label Baku Blogger boaboa.bataktive.com (Sinkron persis dengan navigasi & kanal tematik template)
-ALLOWED_LABELS = [
-    "Berita Sumut",
-    "Tapanuli",
-    "Hukrimpol",
-    "Ekobis",
-    "Wisata & Kuliner",
-    "Olahraga",
-    "Budaya & Hata",
-    "Ototekno",
-]
+# Targeted Query Feeds Berdasarkan Zona Daerah, Rubrik Khusus, & Institusional
+TARGETED_QUERY_FEEDS = {
+    "institusional": [
+        {
+            "name": "Targeted - Polda Sumut",
+            "url": "https://news.google.com/rss/search?q=%22Polda+Sumut%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Polda Sumut", "Hukrimpol"],
+            "base_score": 4,
+            "tier": 2,
+        },
+        {
+            "name": "Targeted - Kejati Sumut",
+            "url": "https://news.google.com/rss/search?q=%22Kejati+Sumut%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Kejati Sumut", "Hukrimpol"],
+            "base_score": 4,
+            "tier": 2,
+        },
+    ],
+    "rubrik": [
+        {
+            "name": "Targeted - Ototekno Sumut",
+            "url": "https://news.google.com/rss/search?q=(%22Otomotif%22+OR+%22Teknologi%22)+%22Sumatera+Utara%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Ototekno"],
+            "base_score": 3,
+            "tier": 2,
+        },
+        {
+            "name": "Targeted - Wisata & Kuliner Sumut",
+            "url": "https://news.google.com/rss/search?q=(%22Wisata%22+OR+%22Kuliner%22)+%22Sumatera+Utara%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Wisata & Kuliner"],
+            "base_score": 3,
+            "tier": 2,
+        },
+        {
+            "name": "Targeted - Olahraga Sumut",
+            "url": "https://news.google.com/rss/search?q=(%22Olahraga%22+OR+%22PSMS%22)+%22Sumatera+Utara%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Olahraga"],
+            "base_score": 3,
+            "tier": 2,
+        },
+        {
+            "name": "Targeted - Ekobis Sumut",
+            "url": "https://news.google.com/rss/search?q=(%22Ekonomi%22+OR+%22Bisnis%22+OR+%22UMKM%22)+%22Sumatera+Utara%22+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Ekobis"],
+            "base_score": 3,
+            "tier": 2,
+        },
+    ],
+    "zona": [
+        {
+            "name": "Targeted - Zona Tabagsel & Pantai Barat",
+            "url": "https://news.google.com/rss/search?q=(%22Tapanuli+Selatan%22+OR+%22Padangsidimpuan%22+OR+%22Mandailing+Natal%22+OR+%22Padang+Lawas%22+OR+%22Sibolga%22+OR+%22Tapanuli+Tengah%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Tapsel", "Sibolga - Tapteng"],
+            "base_score": 4,
+            "tier": 1,
+        },
+        {
+            "name": "Targeted - Zona Kepulauan Nias",
+            "url": "https://news.google.com/rss/search?q=(%22Gunungsitoli%22+OR+%22Nias+Selatan%22+OR+%22Nias+Utara%22+OR+%22Nias+Barat%22+OR+%22Kepulauan+Nias%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Nias"],
+            "base_score": 4,
+            "tier": 1,
+        },
+        {
+            "name": "Targeted - Zona Dairi, Pakpak & Karo",
+            "url": "https://news.google.com/rss/search?q=(%22Dairi%22+OR+%22Sidikalang%22+OR+%22Pakpak+Bharat%22+OR+%22Kabanjahe%22+OR+%22Berastagi%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Dairi", "Karo"],
+            "base_score": 4,
+            "tier": 1,
+        },
+        {
+            "name": "Targeted - Zona Kawasan Danau Toba",
+            "url": "https://news.google.com/rss/search?q=(%22Samosir%22+OR+%22Toba%22+OR+%22Balige%22+OR+%22Tapanuli+Utara%22+OR+%22Tarutung%22+OR+%22Humbang+Hasundutan%22+OR+%22Doloksanggul%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Samosir", "Toba", "Taput", "Humbahas"],
+            "base_score": 4,
+            "tier": 1,
+        },
+        {
+            "name": "Targeted - Zona Siantar, Simalungun & Pesisir Timur",
+            "url": "https://news.google.com/rss/search?q=(%22Pematangsiantar%22+OR+%22Simalungun%22+OR+%22Parapat%22+OR+%22Asahan%22+OR+%22Batubara%22+OR+%22Tanjungbalai%22+OR+%22Labuhanbatu%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Pematangsiantar", "Simalungun", "Asahan", "Labuhanbatu"],
+            "base_score": 4,
+            "tier": 1,
+        },
+        {
+            "name": "Targeted - Zona Langkat, Binjai, Deli Serdang & Sergai",
+            "url": "https://news.google.com/rss/search?q=(%22Langkat%22+OR+%22Stabat%22+OR+%22Binjai%22+OR+%22Deli+Serdang%22+OR+%22Tebing+Tinggi%22+OR+%22Serdang+Bedagai%22)+when:48h&hl=id&gl=ID&ceid=ID:id",
+            "labels": ["Langkat", "Binjai", "Deli Serdang", "Tebing Tinggi"],
+            "base_score": 4,
+            "tier": 1,
+        },
+    ],
+}
 
-# Pemetaan alias variasi topik dan wilayah ke 8 Label Baku
-LABEL_ALIASES = {
-    # Hukrimpol (Hukum, Kriminalitas, Kepolisian, Kecelakaan, Bencana, Politik & Pilkada Daerah)
-    "hukrimpol": "Hukrimpol",
+# Pemetaan alias variasi topik dan wilayah ke 27 Label Baku
+LABEL_ALIASES = {}
+for _target_label, _aliases in GEO_ALIAS_MAP.items():
+    LABEL_ALIASES[_target_label.lower()] = _target_label
+    for _a in _aliases:
+        LABEL_ALIASES[_a.lower()] = _target_label
+
+for _target_label, _aliases in TOPIC_KEYWORD_MAP.items():
+    LABEL_ALIASES[_target_label.lower()] = _target_label
+    for _a in _aliases:
+        LABEL_ALIASES[_a.lower()] = _target_label
+
+# Legacy aliases
+LABEL_ALIASES.update({
+    "berita sumut": "Medan",
+    "tapanuli": "Taput",
+    "budaya & hata": "Wisata & Kuliner",
+    "adat batak": "Wisata & Kuliner",
+    "budaya": "Wisata & Kuliner",
+    "adat": "Wisata & Kuliner",
     "hukum": "Hukrimpol",
-    "kriminal": "Hukrimpol",
-    "kriminalitas": "Hukrimpol",
+    "kriminal": "Kriminalitas",
+    "kriminalitas": "Kriminalitas",
+    "politik": "Politik",
+    "politik daerah": "Politik",
     "hukum kriminal": "Hukrimpol",
     "hukum & kriminal": "Hukrimpol",
-    "hukum/kriminal": "Hukrimpol",
     "peristiwa": "Hukrimpol",
-    "polisi": "Hukrimpol",
-    "polres": "Hukrimpol",
-    "polda": "Hukrimpol",
-    "polrestabes": "Hukrimpol",
-    "sat reskrim": "Hukrimpol",
-    "sat narkoba": "Hukrimpol",
-    "kecelakaan": "Hukrimpol",
-    "laka lantas": "Hukrimpol",
-    "tabrakan": "Hukrimpol",
-    "bencana": "Hukrimpol",
-    "kebakaran": "Hukrimpol",
-    "banjir": "Hukrimpol",
-    "longsor": "Hukrimpol",
-    "narkoba": "Hukrimpol",
-    "sabu": "Hukrimpol",
-    "ganja": "Hukrimpol",
-    "judi": "Hukrimpol",
-    "begal": "Hukrimpol",
-    "curanmor": "Hukrimpol",
-    "curat": "Hukrimpol",
-    "kejari": "Hukrimpol",
-    "kejati": "Hukrimpol",
-    "pengadilan": "Hukrimpol",
-    "sidang": "Hukrimpol",
-    "vonis": "Hukrimpol",
-    "lapas": "Hukrimpol",
-    "rutan": "Hukrimpol",
-    "razia": "Hukrimpol",
-    "korupsi": "Hukrimpol",
-    "pungli": "Hukrimpol",
-    "politik": "Hukrimpol",
-    "politik daerah": "Hukrimpol",
-    "pilkada": "Hukrimpol",
-    "pemilu": "Hukrimpol",
-    "kpu": "Hukrimpol",
-    "bawaslu": "Hukrimpol",
-    "caleg": "Hukrimpol",
-    "dprd": "Hukrimpol",
-    "dprd sumut": "Hukrimpol",
-    "partai": "Hukrimpol",
-
-    # Ekobis (Ekonomi, Bisnis, Perbankan, UMKM, Pertanian, Perkebunan, Pasar)
-    "ekobis": "Ekobis",
-    "ekonomi": "Ekobis",
-    "bisnis": "Ekobis",
-    "ekonomi & bisnis": "Ekobis",
-    "ekonomi bisnis": "Ekobis",
-    "pasar": "Ekobis",
-    "inflasi": "Ekobis",
-    "perbankan": "Ekobis",
-    "bank": "Ekobis",
-    "umkm": "Ekobis",
-    "sawit": "Ekobis",
-    "kelapa sawit": "Ekobis",
-    "karet": "Ekobis",
-    "kopi": "Ekobis",
-    "pertanian": "Ekobis",
-    "perkebunan": "Ekobis",
-    "petani": "Ekobis",
-    "komoditas": "Ekobis",
-    "investasi": "Ekobis",
-    "industri": "Ekobis",
-    "pelabuhan": "Ekobis",
-    "belawan": "Ekobis",
-    "ekspor": "Ekobis",
-    "impor": "Ekobis",
-    "harga pangan": "Ekobis",
-    "keuangan": "Ekobis",
-    "apbd": "Ekobis",
-
-    # Olahraga (PSMS Medan, Sepak Bola, PON, Atlet Sumut, Olahraga Daerah)
-    "olahraga": "Olahraga",
-    "sport": "Olahraga",
-    "sports": "Olahraga",
-    "sepak bola": "Olahraga",
-    "sepakbola": "Olahraga",
-    "bola": "Olahraga",
-    "psms": "Olahraga",
-    "psms medan": "Olahraga",
-    "ayam kinantan": "Olahraga",
-    "liga 2": "Olahraga",
-    "liga 3": "Olahraga",
-    "pon": "Olahraga",
-    "pon sumut": "Olahraga",
-    "atlet": "Olahraga",
-    "atlet sumut": "Olahraga",
-    "stadion teladan": "Olahraga",
-    "futsal": "Olahraga",
-    "bulutangkis": "Olahraga",
-    "badminton": "Olahraga",
-    "wushu": "Olahraga",
-    "gulat": "Olahraga",
-    "tinju": "Olahraga",
-    "renang": "Olahraga",
-    "koni": "Olahraga",
-
-    # Wisata & Kuliner (Pariwisata Danau Toba, Berastagi, Kuliner Medan/Batak/Daerah)
-    "wisata & kuliner": "Wisata & Kuliner",
-    "wisata": "Wisata & Kuliner",
-    "pariwisata": "Wisata & Kuliner",
-    "wisata danau toba": "Wisata & Kuliner",
-    "pariwisata danau toba": "Wisata & Kuliner",
-    "danau toba": "Wisata & Kuliner",
-    "destinasi": "Wisata & Kuliner",
-    "hotel": "Wisata & Kuliner",
-    "kuliner": "Wisata & Kuliner",
-    "kuliner batak": "Wisata & Kuliner",
-    "kuliner medan": "Wisata & Kuliner",
-    "masakan": "Wisata & Kuliner",
-    "makanan": "Wisata & Kuliner",
-    "parapat": "Wisata & Kuliner",
-    "berastagi": "Wisata & Kuliner",
-    "bukit lawang": "Wisata & Kuliner",
-    "tangkahan": "Wisata & Kuliner",
-    "kaldera": "Wisata & Kuliner",
-    "andaliman": "Wisata & Kuliner",
-    "arsik": "Wisata & Kuliner",
-    "saksang": "Wisata & Kuliner",
-    "naniura": "Wisata & Kuliner",
-    "durian ucok": "Wisata & Kuliner",
-    "bika ambon": "Wisata & Kuliner",
-    "lontong medan": "Wisata & Kuliner",
-    "kopi sidikalang": "Wisata & Kuliner",
-    "kopi lintong": "Wisata & Kuliner",
-
-    # Budaya & Hata (Adat, Tradisi, Ulos, Aksara, Bahasa Daerah, Budaya Batak/Melayu/Karo/Nias)
-    "budaya & hata": "Budaya & Hata",
-    "budaya batak": "Budaya & Hata",
-    "adat batak": "Budaya & Hata",
-    "tradisi batak": "Budaya & Hata",
-    "sejarah batak": "Budaya & Hata",
-    "bahasa batak": "Budaya & Hata",
-    "aksara batak": "Budaya & Hata",
-    "kamus batak": "Budaya & Hata",
-    "hata batak": "Budaya & Hata",
-    "hata": "Budaya & Hata",
-    "bahasa daerah": "Budaya & Hata",
-    "ulos": "Budaya & Hata",
-    "dalihan na tolu": "Budaya & Hata",
-    "budaya": "Budaya & Hata",
-    "adat": "Budaya & Hata",
-    "tradisi": "Budaya & Hata",
-    "sejarah": "Budaya & Hata",
-    "melayu deli": "Budaya & Hata",
-    "istana maimun": "Budaya & Hata",
-    "budaya karo": "Budaya & Hata",
-    "budaya nias": "Budaya & Hata",
-    "tor-tor": "Budaya & Hata",
-    "gondang": "Budaya & Hata",
-    "partuturan": "Budaya & Hata",
-    "umpasa": "Budaya & Hata",
-    "komunitas batak": "Budaya & Hata",
-    "komunitas": "Budaya & Hata",
-    "diaspora": "Budaya & Hata",
-    "marga": "Budaya & Hata",
-    "tarombo": "Budaya & Hata",
-    "sinamot": "Budaya & Hata",
-    "pariban": "Budaya & Hata",
-    "boru": "Budaya & Hata",
-    "boru batak": "Budaya & Hata",
-
-    # Ototekno (Otomotif, Teknologi, Gadget, Kendaraan Listrik, PLN, Digital)
-    "ototekno": "Ototekno",
-    "otomotif": "Ototekno",
-    "teknologi": "Ototekno",
-    "motor": "Ototekno",
-    "mobil": "Ototekno",
-    "kendaraan listrik": "Ototekno",
-    "ev": "Ototekno",
-    "gadget": "Ototekno",
-    "smartphone": "Ototekno",
-    "aplikasi": "Ototekno",
-    "internet": "Ototekno",
-    "digital": "Ototekno",
-    "pln": "Ototekno",
-    "pln sumut": "Ototekno",
-    "telkomsel": "Ototekno",
-    "inovasi": "Ototekno",
-    "startup": "Ototekno",
-
-    # Tapanuli (Tapanuli Raya, Samosir, Toba, Humbahas, Tapteng, Sibolga, Dairi, Pakpak, Madina, Palas, Nias)
-    "tapanuli": "Tapanuli",
-    "tapanuli utara": "Tapanuli",
-    "tapanuli tengah": "Tapanuli",
-    "tapanuli selatan": "Tapanuli",
-    "taput": "Tapanuli",
-    "tapteng": "Tapanuli",
-    "tapsel": "Tapanuli",
-    "sibolga": "Tapanuli",
-    "tarutung": "Tapanuli",
-    "humbang hasundutan": "Tapanuli",
-    "humbahas": "Tapanuli",
-    "doloksanggul": "Tapanuli",
-    "dairi": "Tapanuli",
-    "sidikalang": "Tapanuli",
-    "pakpak bharat": "Tapanuli",
-    "salak": "Tapanuli",
-    "samosir": "Tapanuli",
-    "pangururan": "Tapanuli",
-    "toba": "Tapanuli",
-    "balige": "Tapanuli",
-    "toba samosir": "Tapanuli",
-    "padangsidimpuan": "Tapanuli",
-    "padang lawas": "Tapanuli",
-    "palas": "Tapanuli",
-    "padang lawas utara": "Tapanuli",
-    "paluta": "Tapanuli",
-    "mandailing natal": "Tapanuli",
-    "madina": "Tapanuli",
-    "nias": "Tapanuli",
-    "gunungsitoli": "Tapanuli",
-    "nias selatan": "Tapanuli",
-    "nias barat": "Tapanuli",
-    "nias utara": "Tapanuli",
-
-    # Berita Sumut (Ibu Kota Medan, Aglomerasi Deli Serdang, Pantai Timur, Dataran Tinggi & Umum Sumut)
-    "berita sumut": "Berita Sumut",
-    "sumatera utara": "Berita Sumut",
-    "sumut": "Berita Sumut",
-    "medan": "Berita Sumut",
-    "kota medan": "Berita Sumut",
-    "deli serdang": "Berita Sumut",
-    "lubuk pakam": "Berita Sumut",
-    "langkat": "Berita Sumut",
-    "stabat": "Berita Sumut",
-    "binjai": "Berita Sumut",
-    "pematangsiantar": "Berita Sumut",
-    "siantar": "Berita Sumut",
-    "simalungun": "Berita Sumut",
-    "karo": "Berita Sumut",
-    "kabanjahe": "Berita Sumut",
-    "tebing tinggi": "Berita Sumut",
-    "asahan": "Berita Sumut",
-    "kisaran": "Berita Sumut",
-    "batubara": "Berita Sumut",
-    "tanjungbalai": "Berita Sumut",
-    "labuhanbatu": "Berita Sumut",
-    "rantauprapat": "Berita Sumut",
-    "labuhanbatu selatan": "Berita Sumut",
-    "labusel": "Berita Sumut",
-    "labuhanbatu utara": "Berita Sumut",
-    "labura": "Berita Sumut",
-    "serdang bedagai": "Berita Sumut",
-    "sergai": "Berita Sumut",
-    "pemerintahan": "Berita Sumut",
-    "pemprov sumut": "Berita Sumut",
-    "daerah": "Berita Sumut",
-}
+})
 
 # Filter foto berita & aturan ilustrasi kontekstual AI
 REQUIRE_REAL_IMAGE = os.environ.get("REQUIRE_REAL_IMAGE", "0").strip().lower() in ("1", "true", "yes")
@@ -397,13 +335,23 @@ FALLBACK_IMAGES_BY_TOPIC = {
         "https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
     ],
-    "budaya_hata": [
-        "https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
-    ],
     "hukrimpol": [
         "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
         "https://images.unsplash.com/photo-1453733190371-0a9bedd82893?auto=format&fit=crop&w=1200&q=80",
+    ],
+    "kriminalitas": [
+        "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1453733190371-0a9bedd82893?auto=format&fit=crop&w=1200&q=80",
+    ],
+    "politik": [
+        "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1200&q=80",
+    ],
+    "polda_sumut": [
+        "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
+    ],
+    "kejati_sumut": [
+        "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
     ],
     "ekobis": [
         "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80",
@@ -424,11 +372,9 @@ FALLBACK_IMAGES_BY_TOPIC = {
 }
 
 BAD_IMAGE_PATTERNS = [
-    # Avatar Google / Akun (bukan Blogger CDN)
     "lh3.googleusercontent.com",
     "gstatic.com",
     "google.com",
-    # Ikon, Logo, Avatar & Profil Penulis
     "favicon",
     "logo_",
     "/logo",
@@ -443,7 +389,6 @@ BAD_IMAGE_PATTERNS = [
     "author-avatar",
     "user-avatar",
     "gravatar.com",
-    # Iklan & Banner Promosi
     "/ads/",
     "/ad/",
     "googleads",
@@ -456,20 +401,17 @@ BAD_IMAGE_PATTERNS = [
     "outbrain",
     "/banners/",
     "iklan",
-    # Tombol Berbagi & Widget
     "share-button",
     "share-icon",
     "social-share",
     "widget_",
     "/widget",
-    # Thumbnail Sangat Kecil / Icon
     "small_",
     "_330x",
     "150x150",
     "100x100",
     "60x60",
     "50x50",
-    # Pola Watermark & Crop Portal Komersial
     "l_text:",
     "og_kumparan",
     "watermark",
@@ -477,7 +419,6 @@ BAD_IMAGE_PATTERNS = [
     "/api/wm/",
     "/wm/",
     "wm=",
-    # Placeholder & Tracking Pixel
     "placeholder",
     "no-image",
     "picture_not_available",

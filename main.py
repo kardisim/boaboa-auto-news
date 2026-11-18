@@ -9,6 +9,7 @@ from googleapiclient.discovery import build
 from groq import Groq
 
 from boaboa.config import (
+    ALLOWED_LABELS,
     BLOG_ID,
     GEMINI_API_KEY,
     GEMINI_MODEL,
@@ -18,6 +19,7 @@ from boaboa.config import (
     PUBLISH_AS_DRAFT,
     REQUIRE_REAL_IMAGE,
     RSS_URLS,
+    TARGETED_QUERY_FEEDS,
 )
 from boaboa.extractor import (
     clean_media_name,
@@ -25,6 +27,7 @@ from boaboa.extractor import (
     resolve_original_url,
 )
 from boaboa.history import (
+    get_label_counts,
     is_duplicate_story,
     load_history,
     make_history_record,
@@ -33,7 +36,11 @@ from boaboa.history import (
 from boaboa.html_formatter import fetch_boaboa_posts_index, format_final_html
 from boaboa.image_generator import generate_contextual_illustration
 from boaboa.quality_guard import check_editorial_quality
-from boaboa.relevance import cluster_candidate_stories, score_candidate
+from boaboa.relevance import (
+    cluster_candidate_stories,
+    detect_candidate_labels,
+    score_candidate,
+)
 from boaboa.writer import get_best_groq_model, get_groq_model_candidates, rewrite_news
 
 socket.setdefaulttimeout(30)
@@ -56,16 +63,44 @@ def get_blogger_service():
     return build("blogger", "v3", credentials=creds)
 
 
+def select_active_feeds(history: list, max_targeted_per_group: int = 2) -> list[dict]:
+    """Menggabungkan feed RSS utama dengan feed query terarah yang diprioritaskan
+    berdasarkan defisit label pada riwayat publikasi terakhir.
+    """
+    label_counts = get_label_counts(history, window=150)
+    active_feeds = list(RSS_URLS)
+
+    for group_name, feed_list in TARGETED_QUERY_FEEDS.items():
+        def _feed_deficit(f_cfg):
+            target_labels = f_cfg.get("labels", [])
+            # Semakin sedikit label pernah terbit, semakin tinggi skor prioritasnya
+            return sum(100.0 / (label_counts.get(lbl, 0) + 1) for lbl in target_labels)
+
+        sorted_feeds = sorted(feed_list, key=_feed_deficit, reverse=True)
+        chosen = sorted_feeds[:max_targeted_per_group]
+        active_feeds.extend(chosen)
+
+    return active_feeds
+
+
 def collect_candidates(history: list) -> list[dict]:
     candidates: list[dict] = []
     session_seen: list[dict] = []
+    label_counts = get_label_counts(history, window=150)
+    active_feeds = select_active_feeds(history, max_targeted_per_group=2)
 
-    for feed_cfg in RSS_URLS:
+    print(f"Total saluran feed aktif: {len(active_feeds)} (Utama: {len(RSS_URLS)}, Terarah: {len(active_feeds) - len(RSS_URLS)})", flush=True)
+
+    for feed_cfg in active_feeds:
         feed_name = feed_cfg["name"]
         rss_url = feed_cfg["url"]
-        base_score = feed_cfg["base_score"]
+        base_score = feed_cfg.get("base_score", 3)
         print(f"\n--- Memindai saluran RSS [{feed_name}] ---", flush=True)
-        feed = feedparser.parse(rss_url)
+        try:
+            feed = feedparser.parse(rss_url)
+        except Exception as e:
+            print(f"Peringatan gagal membaca feed {feed_name}: {e}", flush=True)
+            continue
 
         accepted_from_feed = 0
         for entry in feed.entries:
@@ -74,6 +109,7 @@ def collect_candidates(history: list) -> list[dict]:
 
             title = entry.get("title", "").strip()
             link = entry.get("link", "").strip()
+            summary = entry.get("summary", "").strip()
             source_media = entry.get("source", {}).get("title", "Media Terkait")
             if not title or not link:
                 continue
@@ -88,13 +124,28 @@ def collect_candidates(history: list) -> list[dict]:
                 print(f"Melewati tidak relevan: {title} ({rel_reason})", flush=True)
                 continue
 
+            # Deteksi label kandidat awal & hitung bobot defisit kuota label
+            cand_labels = detect_candidate_labels(title, summary)
+            deficit_bonus = 0.0
+            for lbl in cand_labels:
+                c_val = label_counts.get(lbl, 0)
+                if c_val == 0:
+                    deficit_bonus += 50.0  # Bonus besar jika label masih kosong di riwayat
+                else:
+                    deficit_bonus += round(100.0 / (c_val + 1), 2)
+
+            total_score = rel_score + deficit_bonus
+
             cand = {
                 "feed_name": feed_name,
                 "title": title,
                 "link": link,
                 "source_media": source_media,
-                "score": rel_score,
-                "reason": rel_reason,
+                "summary": summary,
+                "score": total_score,
+                "base_rel_score": rel_score,
+                "candidate_labels": cand_labels,
+                "reason": f"{rel_reason}, deficit_bonus={deficit_bonus:.1f}",
             }
             candidates.append(cand)
             session_seen.append({"google_url": link, "title": title})
@@ -102,6 +153,33 @@ def collect_candidates(history: list) -> list[dict]:
 
     candidates.sort(key=lambda item: item["score"], reverse=True)
     return candidates
+
+
+def select_diverse_candidates(clusters: list[dict], max_items: int = MAX_POSTS_PER_RUN) -> list[dict]:
+    """Memilih hingga max_items kandidat berita terbaik menggunakan algoritma
+    greedy diversity selection agar seluruh 8 draf tersebar secara berimbang.
+    """
+    selected: list[dict] = []
+    remaining = list(clusters)
+    batch_label_counts: dict[str, int] = {}
+
+    while len(selected) < max_items and remaining:
+        def _diversity_eval(cand: dict) -> float:
+            c_labels = cand.get("candidate_labels", [])
+            # Penalti sementara untuk label yang baru saja terpilih pada batch ini
+            penalty = sum(35.0 * batch_label_counts.get(lbl, 0) for lbl in c_labels)
+            # Bonus untuk label baru pada batch ini
+            fresh_bonus = sum(15.0 for lbl in c_labels if batch_label_counts.get(lbl, 0) == 0)
+            return cand.get("score", 0.0) - penalty + fresh_bonus
+
+        remaining.sort(key=_diversity_eval, reverse=True)
+        best = remaining.pop(0)
+        selected.append(best)
+
+        for lbl in best.get("candidate_labels", []):
+            batch_label_counts[lbl] = batch_label_counts.get(lbl, 0) + 1
+
+    return selected
 
 
 def run_automation(dry_run: bool = False) -> None:
@@ -123,8 +201,11 @@ def run_automation(dry_run: bool = False) -> None:
 
     raw_candidates = collect_candidates(history)
     print(f"\nTotal kandidat sebelum clustering: {len(raw_candidates)}")
-    candidates = cluster_candidate_stories(raw_candidates, similarity_threshold=0.55)
-    print(f"Total kandidat setelah clustering peristiwa: {len(candidates)} (maks {MAX_POSTS_PER_RUN} draf/run)", flush=True)
+    clustered = cluster_candidate_stories(raw_candidates, similarity_threshold=0.55)
+    print(f"Total kelompok berita setelah clustering: {len(clustered)}", flush=True)
+
+    candidates = select_diverse_candidates(clustered, max_items=MAX_POSTS_PER_RUN)
+    print(f"Kandidat terseleksi setelah penyeimbangan kuota: {len(candidates)} (target maks {MAX_POSTS_PER_RUN} draf/run)", flush=True)
 
     published_count = 0
     for cand in candidates:
@@ -169,11 +250,11 @@ def run_automation(dry_run: bool = False) -> None:
                 continue
 
             full_source_text = details["text"]
-            clustered = cand.get("clustered_sources", [])
-            if clustered:
-                print(f"Menggabungkan {len(clustered)} sumber liputan untuk peristiwa yang sama...", flush=True)
+            clustered_items = cand.get("clustered_sources", [])
+            if clustered_items:
+                print(f"Menggabungkan {len(clustered_items)} sumber liputan untuk peristiwa yang sama...", flush=True)
                 extra_texts = []
-                for cl_item in clustered[:2]:
+                for cl_item in clustered_items[:2]:
                     try:
                         cl_url = resolve_original_url(cl_item["link"])
                         cl_details = extract_article_details(cl_url)
@@ -265,9 +346,9 @@ def run_automation(dry_run: bool = False) -> None:
                     f"| labels={article_data['labels']} | Deskripsi Penelusuran: {meta_desc}",
                     flush=True,
                 )
-                history.append(make_history_record(cand["link"], real_url, cand["title"], source_media))
+                history.append(make_history_record(cand["link"], real_url, article_data["title"], source_media, labels=article_data["labels"]))
                 for cl_item in cand.get("clustered_sources", []):
-                    history.append(make_history_record(cl_item["link"], "", cl_item["title"], cl_item["source_media"]))
+                    history.append(make_history_record(cl_item["link"], "", cl_item["title"], cl_item["source_media"], labels=article_data["labels"]))
                 save_history(history)
 
             published_count += 1

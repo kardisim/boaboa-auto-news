@@ -4,6 +4,7 @@ import re
 
 from boaboa.config import (
     ALLOWED_LABELS,
+    GEO_ALIAS_MAP,
     LABEL_ALIASES,
     MAX_LABELS_PER_POST,
     META_DESC_MAX_CHARS,
@@ -87,92 +88,26 @@ def strip_html(html: str) -> str:
 
 
 def infer_labels_from_context(text: str) -> list[str]:
-    """Mendeteksi 1 hingga maksimal 2 dari 8 label baku Blogger boaboa.bataktive.com berdasarkan konteks naskah berita."""
-    lower = text.lower()
-    detected = []
+    """Mendeteksi 2 hingga 4 dari 27 label baku Blogger boaboa.bataktive.com berdasarkan konteks naskah berita."""
+    from boaboa.relevance import detect_candidate_labels
 
-    # 1. Hukrimpol (Hukum, Kriminal, Kepolisian, Kecelakaan, Bencana, Politik & Pilkada Daerah)
-    if any(k in lower for k in (
-        "polisi", "polres", "polda", "polsek", "polrestabes", "narkoba", "sabu", "ganja", "tangkap", "ditangkap",
-        "maling", "curat", "curas", "begal", "curanmor", "judi", "tahanan", "diringkus",
-        "tersangka", "pelaku", "kejari", "kejati", "vonis", "lapas", "rutan", "pembunuhan", "aniaya",
-        "penjara", "kriminal", "sat reskrim", "sat narkoba", "razia", "sidang", "korupsi", "pungli",
-        "kecelakaan", "tabrakan", "laka lantas", "kebakaran", "longsor", "banjir", "bencana",
-        "politik", "pilkada", "pemilu", "bawaslu", "kpu", "caleg", "dprd"
-    )):
+    detected = detect_candidate_labels(text)
+
+    # Pastikan minimal ada 1 wilayah dan 1 rubrik
+    has_region = any(lbl in GEO_ALIAS_MAP for lbl in detected)
+    if not has_region:
+        detected.insert(0, "Medan")
+
+    has_rubric = any(lbl not in GEO_ALIAS_MAP and lbl not in ("Polda Sumut", "Kejati Sumut") for lbl in detected)
+    if not has_rubric:
         detected.append("Hukrimpol")
 
-    # 2. Olahraga (PSMS, Sepak Bola, PON Sumut, Atlet Daerah)
-    if any(k in lower for k in (
-        "psms", "psms medan", "ayam kinantan", "sepak bola", "sepakbola", "liga 2", "liga 3",
-        "stadion teladan", "stadion baharoeddin", "pon sumut", "atlet sumut", "koni sumut",
-        "olahraga", "futsal", "bulutangkis", "wushu", "gulat", "tinju", "renang"
-    )):
-        if "Olahraga" not in detected:
-            detected.append("Olahraga")
-
-    # 3. Ekobis (Ekonomi, Bisnis, Perbankan, UMKM, Sawit, Pertanian, Pasar)
-    if any(k in lower for k in (
-        "ekonomi", "bisnis", "pasar", "inflasi", "perbankan", "bank", "umkm", "sawit", "kelapa sawit",
-        "karet", "pertanian", "perkebunan", "petani", "komoditas", "investasi", "industri",
-        "pelabuhan belawan", "belawan", "ekspor", "harga pangan", "beras", "apbd"
-    )):
-        if "Ekobis" not in detected:
-            detected.append("Ekobis")
-
-    # 4. Wisata & Kuliner (Danau Toba, Berastagi, Kuliner Medan/Batak/Daerah)
-    if any(k in lower for k in (
-        "danau toba", "wisata", "pantai", "hotel", "bukit", "air terjun", "geopark",
-        "pariwisata", "objek wisata", "desa wisata", "kaldera", "parapat", "berastagi",
-        "bukit lawang", "tangkahan", "kuliner", "makanan", "masakan", "arsik", "saksang",
-        "andaliman", "naniura", "durian ucok", "bika ambon", "lontong medan", "kopi sidikalang", "kopi lintong"
-    )):
-        if "Wisata & Kuliner" not in detected:
-            detected.append("Wisata & Kuliner")
-
-    # 5. Budaya & Hata (Adat, Tradisi, Ulos, Bahasa Daerah, Budaya Batak/Melayu/Karo/Nias)
-    if any(k in lower for k in (
-        "adat", "ulos", "marga", "tradisi", "budaya", "ritual", "gondang", "tor-tor",
-        "dalihan na tolu", "upacara adat", "mangulosi", "partuturan", "huta",
-        "bahasa batak", "aksara batak", "hata batak", "hata", "umpasa", "tarombo", "sejarah",
-        "melayu deli", "istana maimun", "budaya karo", "budaya nias", "komunitas", "diaspora",
-        "sinamot", "pariban", "boru batak"
-    )):
-        if "Budaya & Hata" not in detected:
-            detected.append("Budaya & Hata")
-
-    # 6. Ototekno (Otomotif, Teknologi, EV, PLN, Internet, Digital)
-    if any(k in lower for k in (
-        "otomotif", "teknologi", "motor", "mobil", "kendaraan listrik", "ev",
-        "gadget", "smartphone", "aplikasi", "internet", "digital", "pln", "pln sumut",
-        "telkomsel", "inovasi", "startup"
-    )):
-        if "Ototekno" not in detected:
-            detected.append("Ototekno")
-
-    # 7. Tapanuli (Kawasan Tapanuli Raya, Samosir, Toba, Humbahas, Tapteng, Sibolga, Dairi, Nias)
-    if any(k in lower for k in (
-        "tapanuli", "taput", "tapteng", "tapsel", "sibolga", "tarutung",
-        "dairi", "sidikalang", "humbang", "humbahas", "doloksanggul", "padangsidimpuan",
-        "padang lawas", "palas", "paluta", "sipirok", "mandailing natal", "madina",
-        "panyabungan", "nias", "gunungsitoli", "nias selatan", "nias barat", "nias utara",
-        "pakpak bharat", "salak", "samosir", "pangururan", "balige", "toba", "porsea", "laguboti", "ajibata"
-    )):
-        if "Tapanuli" not in detected:
-            detected.append("Tapanuli")
-
-    if not detected:
-        detected.extend(["Berita Sumut", "Hukrimpol"])
-    elif len(detected) == 1:
-        if detected[0] in ("Berita Sumut", "Tapanuli"):
+    if any(k in detected for k in ("Kriminalitas", "Politik", "Polda Sumut", "Kejati Sumut")):
+        if "Hukrimpol" not in detected:
             detected.append("Hukrimpol")
-        else:
-            if any(k in lower for k in ("tapanuli", "taput", "tapteng", "tapsel", "sibolga", "tarutung", "dairi", "samosir", "toba", "humbahas", "sidikalang")):
-                detected.append("Tapanuli")
-            else:
-                detected.append("Berita Sumut")
 
-    return detected[:MAX_LABELS_PER_POST]
+    valid = [lbl for lbl in detected if lbl in ALLOWED_LABELS]
+    return valid[:MAX_LABELS_PER_POST]
 
 
 def normalize_labels(
@@ -181,6 +116,7 @@ def normalize_labels(
     title: str = "",
     content: str = "",
 ) -> list[str]:
+    """Menormalisasi label ke 2 hingga 4 label baku boaboa.bataktive.com."""
     allowed_map = {lbl.lower(): lbl for lbl in ALLOWED_LABELS}
     cleaned: list[str] = []
 
@@ -203,23 +139,80 @@ def normalize_labels(
             if mapped and mapped not in cleaned:
                 cleaned.append(mapped)
 
-    if not cleaned:
-        cleaned = infer_labels_from_context(f"{title} {content}")
+    from boaboa.relevance import detect_candidate_labels
+    context_labels = detect_candidate_labels(f"{title} {content}") if (title or content) else []
 
-    if len(cleaned) < 2:
-        context_labels = infer_labels_from_context(f"{title} {content}")
+    # 1. Pastikan minimal ada 1 label wilayah
+    has_region = any(lbl in GEO_ALIAS_MAP for lbl in cleaned)
+    if not has_region:
+        for r in context_labels:
+            if r in GEO_ALIAS_MAP and r not in cleaned:
+                cleaned.append(r)
+                has_region = True
+                break
+        if not has_region:
+            cleaned.append("Medan")
+
+    # 2. Pastikan minimal ada 1 label rubrik
+    rubrics = {"Kriminalitas", "Politik", "Ekobis", "Wisata & Kuliner", "Olahraga", "Ototekno", "Hukrimpol"}
+    has_rubric = any(lbl in rubrics for lbl in cleaned)
+    if not has_rubric:
+        for rb in context_labels:
+            if rb in rubrics and rb not in cleaned:
+                cleaned.append(rb)
+                has_rubric = True
+                break
+        if not has_rubric:
+            cleaned.append("Hukrimpol")
+
+    # 3. Label Institusional opsional jika terdeteksi dalam konteks
+    for inst in ("Polda Sumut", "Kejati Sumut"):
+        if inst in context_labels and inst not in cleaned and len(cleaned) < MAX_LABELS_PER_POST:
+            cleaned.append(inst)
+
+    # 4. Aturan Wajib Hukrimpol:
+    # Jika artikel memuat Kriminalitas, Politik, Polda Sumut, atau Kejati Sumut -> wajib menyertakan Hukrimpol
+    if any(k in cleaned for k in ("Kriminalitas", "Politik", "Polda Sumut", "Kejati Sumut")):
+        if "Hukrimpol" not in cleaned:
+            cleaned.append("Hukrimpol")
+
+    # 5. Jika total label masih < MIN_LABELS_PER_POST (2), tambahkan kandidat konteks yang valid
+    if len(cleaned) < MIN_LABELS_PER_POST:
         for cl in context_labels:
             if cl not in cleaned:
                 cleaned.append(cl)
-        if len(cleaned) < 2:
-            defaults = ["Berita Sumut", "Tapanuli", "Hukrimpol"]
-            for d in defaults:
-                if d not in cleaned:
-                    cleaned.append(d)
-                if len(cleaned) >= 2:
+                if len(cleaned) >= MIN_LABELS_PER_POST:
                     break
 
-    return cleaned[:MAX_LABELS_PER_POST]
+    final_labels = [lbl for lbl in cleaned if lbl in ALLOWED_LABELS]
+
+    # Aturan prioritas jika melebihi MAX_LABELS_PER_POST (maks 4):
+    if len(final_labels) > MAX_LABELS_PER_POST:
+        priority_order = []
+        for inst in ("Polda Sumut", "Kejati Sumut"):
+            if inst in final_labels and inst not in priority_order:
+                priority_order.append(inst)
+        for kp in ("Kriminalitas", "Politik"):
+            if kp in final_labels and kp not in priority_order:
+                priority_order.append(kp)
+        if "Hukrimpol" in final_labels and "Hukrimpol" not in priority_order:
+            priority_order.append("Hukrimpol")
+        for reg in final_labels:
+            if reg in GEO_ALIAS_MAP and reg not in priority_order:
+                priority_order.append(reg)
+        for other in final_labels:
+            if other not in priority_order:
+                priority_order.append(other)
+        final_labels = priority_order[:MAX_LABELS_PER_POST]
+
+    # Pastikan minimal 2 label
+    if len(final_labels) < MIN_LABELS_PER_POST:
+        if "Hukrimpol" not in final_labels:
+            final_labels.append("Hukrimpol")
+        elif "Medan" not in final_labels:
+            final_labels.append("Medan")
+
+    return final_labels
 
 
 def check_raw_similarity(generated_text: str, source_text: str) -> float:
@@ -265,7 +258,7 @@ def check_editorial_quality(
     labels = article_data.get("labels", [])
     is_hukrimpol = "Hukrimpol" in labels
     presumption_passed = True
-    if is_hukrimpol:
+    if is_hukrimpol or "Kriminalitas" in labels or "Polda Sumut" in labels:
         content_lower = content.lower()
         has_presumption = any(k in content_lower for k in ("diduga", "terduga", "disangkakan", "proses hukum", "penyelidikan", "penyidikan", "menurut keterangan"))
         presumption_passed = has_presumption
@@ -283,12 +276,16 @@ def check_editorial_quality(
     if not presumption_passed:
         issues.append("Berita Hukrimpol belum memuat kata asas praduga tak bersalah (diduga/terduga/penyelidikan).")
 
+    regions_in_labels = [lbl for lbl in labels if lbl in GEO_ALIAS_MAP]
+    region_display = ", ".join(regions_in_labels) if regions_in_labels else "Umum Sumut"
+
     checklist = [
         f"Jumlah Kata: {word_count} kata (Target >= {min_len_target}) - {'Lolos' if word_count >= min_len_target else 'Catatan'}",
         f"Anti-Plagiasi: Kemiripan Mentah {raw_similarity}% (Batas < 45%) - {'Lolos' if raw_similarity < 45.0 else 'Catatan'}",
         f"Format Teks: Bebas teks 'Baca Juga' - {'Lolos' if not has_baca_juga else 'Ditemukan'}",
         f"Status Gambar: {image_status or ('Tersedia' if has_valid_image else 'Tidak Ada')}",
         f"Etika Dewan Pers: Asas Praduga Tak Bersalah - {'Lolos' if presumption_passed else 'Perlu Dicek'}",
+        f"Cakupan Label: {', '.join(labels)} (Wilayah: {region_display})",
     ]
 
     return {
@@ -442,10 +439,15 @@ def validate_article_quality(
 
     # Catatan: ALLOWED_LABELS boaboa memuat '&' (contoh: 'Wisata & Kuliner', 'Budaya & Hata'),
     # sehingga pengecekan label hanya memastikan bahwa setiap label ada di ALLOWED_LABELS dan tidak memakai '/'
-    if len(labels) != 2 or any(
+    if len(labels) < MIN_LABELS_PER_POST or len(labels) > MAX_LABELS_PER_POST or any(
         lbl not in ALLOWED_LABELS or "/" in lbl for lbl in labels
     ):
-        issues.append(f"Label tidak sesuai standar (wajib tepat 2 Core Labels dari daftar baku): {labels}")
+        issues.append(
+            f"Label tidak sesuai standar (wajib {MIN_LABELS_PER_POST}-{MAX_LABELS_PER_POST} label dari ALLOWED_LABELS): {labels}"
+        )
+
+    if any(k in labels for k in ("Kriminalitas", "Politik", "Polda Sumut", "Kejati Sumut")) and "Hukrimpol" not in labels:
+        issues.append("Artikel terkait kriminalitas/politik/aparat penegak hukum wajib menyertakan label 'Hukrimpol'")
 
     if re.search(r"<h1\b|<script\b|application/ld\+json|<iframe\b", content, re.I):
         issues.append("Ditemukan tag HTML/schema terlarang (<h1>, <script>, <iframe>, atau JSON-LD)")

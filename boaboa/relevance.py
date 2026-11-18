@@ -1,7 +1,10 @@
 import re
 
 from boaboa.config import (
+    ALLOWED_LABELS,
+    GEO_ALIAS_MAP,
     MIN_RELEVANCE_SCORE,
+    TOPIC_KEYWORD_MAP,
     UGC_OPINION_DOMAINS,
     UGC_OPINION_SOURCES,
     VIDEO_ONLY_DOMAINS,
@@ -25,7 +28,7 @@ CORE_SUMUT_KEYWORDS = {
     "padangsidimpuan", "padang lawas", "palas", "paluta", "mandailing", "mandailing natal",
     "madina", "panyabungan", "sipirok", "nias", "gunungsitoli", "nias selatan", "nias utara", "nias barat",
     # Institusi, Identitas & Komunitas Provinsi Sumatera Utara
-    "sumut", "sumatera utara", "pemprov sumut", "polda sumut", "kodam i/bb", "polrestabes medan",
+    "sumut", "sumatera utara", "pemprov sumut", "polda sumut", "kejati sumut", "kodam i/bb", "polrestabes medan",
     "batak", "ulos", "dalihan na tolu", "marga", "bona pasogit", "psms", "psms medan",
     "sinamot", "pariban", "boru", "umpasa", "aksara batak", "partuturan",
 }
@@ -70,12 +73,46 @@ OFF_TOPIC_REGIONAL_KEYWORDS = {
 }
 
 
-def _match_keywords(text: str, keywords: set[str]) -> list[str]:
+def _match_keywords(text: str, keywords: set[str] | list[str]) -> list[str]:
     matched = []
     for kw in keywords:
         if re.search(rf"\b{re.escape(kw)}\b", text):
             matched.append(kw)
     return matched
+
+
+def detect_candidate_labels(title: str, summary: str = "") -> list[str]:
+    """Mendeteksi kandidat label awal dari judul dan ringkasan berdasarkan 27 label baku."""
+    combined = f"{title} {summary}".lower()
+    labels: list[str] = []
+
+    # 1. Deteksi Wilayah dari 18 Klaster 33 Kab/Kota Sumut
+    for region, aliases in GEO_ALIAS_MAP.items():
+        matched = False
+        for alias in aliases:
+            if re.search(rf"\b{re.escape(alias.lower())}\b", combined):
+                matched = True
+                break
+        if matched and region not in labels:
+            labels.append(region)
+
+    # 2. Deteksi Institusional & Rubrik Tematik
+    for topic, keywords in TOPIC_KEYWORD_MAP.items():
+        matched = False
+        for kw in keywords:
+            if re.search(rf"\b{re.escape(kw.lower())}\b", combined):
+                matched = True
+                break
+        if matched and topic not in labels:
+            labels.append(topic)
+
+    # 3. Aturan Wajib Hukrimpol:
+    # Jika artikel terdeteksi Kriminalitas, Politik, Polda Sumut, atau Kejati Sumut -> otomatis wajib menyertakan Hukrimpol
+    if any(k in labels for k in ("Kriminalitas", "Politik", "Polda Sumut", "Kejati Sumut")):
+        if "Hukrimpol" not in labels:
+            labels.append("Hukrimpol")
+
+    return [lbl for lbl in labels if lbl in ALLOWED_LABELS]
 
 
 def score_candidate(
@@ -108,6 +145,8 @@ def score_candidate(
     matched_nat_sports = _match_keywords(clean_title, OFF_NICHE_NATIONAL_SPORTS_KEYWORDS)
     matched_other_region = _match_keywords(clean_title, OFF_TOPIC_REGIONAL_KEYWORDS)
 
+    candidate_labels = detect_candidate_labels(clean_title)
+
     # 1. Olahraga daerah Sumut (PSMS Medan, PON Sumut, atlet Sumut) didukung penuh untuk kanal Olahraga boaboa
     if matched_sumut_sports:
         score += 4 + min(len(matched_sumut_sports), 2)
@@ -118,6 +157,11 @@ def score_candidate(
     # 2. Entitas wilayah / identitas Sumatera Utara
     if matched_sumut:
         score += 3 + min(len(matched_sumut), 3)
+
+    # Bonus untuk daerah luar Medan agar cakupan wilayah merata
+    non_medan_regions = [lbl for lbl in candidate_labels if lbl in GEO_ALIAS_MAP and lbl != "Medan"]
+    if non_medan_regions:
+        score += 3
 
     # 3. Rubrik Hukrimpol lokal Sumut TIDAK DIBLOKIR dan diberi prioritas
     if matched_hukrimpol and matched_sumut:
@@ -140,6 +184,8 @@ def score_candidate(
         score -= 4
 
     reason_parts = [f"skor={score}"]
+    if candidate_labels:
+        reason_parts.append(f"labels={candidate_labels}")
     if matched_sumut:
         reason_parts.append(f"sumut={matched_sumut[:3]}")
     if matched_sumut_sports:

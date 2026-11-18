@@ -5,7 +5,7 @@ import os
 import re
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from boaboa.config import HISTORY_FILE, HISTORY_MAX_ITEMS
+from boaboa.config import ALLOWED_LABELS, HISTORY_FILE, HISTORY_MAX_ITEMS
 
 STOPWORDS_ID = {
     "yang", "dan", "di", "ke", "dari", "pada", "untuk", "dengan", "akan",
@@ -162,6 +162,7 @@ def make_history_record(
     real_url: str,
     title: str,
     source_media: str,
+    labels: list[str] | None = None,
 ) -> dict:
     return {
         "google_url": google_url,
@@ -169,5 +170,34 @@ def make_history_record(
         "title": strip_media_suffix(title),
         "normalized_title": normalize_title(title),
         "source": source_media,
+        "labels": list(labels) if labels else [],
         "posted_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def get_label_counts(history: list | None = None, window: int = 150) -> dict[str, int]:
+    """Menghitung frekuensi kemunculan masing-masing dari 27 ALLOWED_LABELS pada riwayat terakhir.
+    Label yang belum pernah terisi bernilai 0.
+    """
+    if history is None:
+        history = load_history()
+
+    counts = {lbl: 0 for lbl in ALLOWED_LABELS}
+    recent_items = history[-window:] if len(history) > window else history
+
+    from boaboa.relevance import detect_candidate_labels
+
+    for item in recent_items:
+        if not isinstance(item, dict):
+            continue
+        item_labels = item.get("labels", [])
+        if not item_labels:
+            title = item.get("title", "")
+            if title:
+                item_labels = detect_candidate_labels(title)
+
+        for lbl in item_labels:
+            if lbl in counts:
+                counts[lbl] += 1
+
+    return counts

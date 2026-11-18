@@ -94,7 +94,7 @@ class TestWriter(unittest.TestCase):
                 "<p>Pelaku UMKM lokal dilibatkan untuk menyajikan kuliner khas daerah agar perekonomian warga di sekitar kawasan wisata turut bertumbuh.</p>"
                 "<p>Dinas Pariwisata menargetkan seluruh pekerjaan fisik dapat selesai tepat waktu dengan mutu terjaga.</p>"
             ),
-            "labels": ["Tapanuli", "Wisata & Kuliner"],
+            "labels": ["Taput", "Wisata & Kuliner"],
         }
         repaired_draft = {
             "title": "Pemkab Tapanuli Utara Percepat Penataan Wisata Danau Toba",
@@ -110,7 +110,7 @@ class TestWriter(unittest.TestCase):
                 "<blockquote><p>Penataan ini bukan hanya soal fisik, melainkan bagaimana warga ikut merasakan manfaat ekonomi langsung - Rudi Simanjuntak, Kepala Dinas Pariwisata Tapanuli Utara</p></blockquote>"
                 "<p>Pemerintah daerah turut menyiapkan jalur pejalan kaki, area parkir, serta pusat informasi perjalanan di Tarutung agar wisatawan memperoleh panduan lengkap dengan standar kenyamanan terbaik selama berlibur.</p>"
             ),
-            "labels": ["Tapanuli", "Wisata & Kuliner", "Berita Sumut"],
+            "labels": ["Taput", "Wisata & Kuliner"],
         }
 
         client = MagicMock()
@@ -129,7 +129,7 @@ class TestWriter(unittest.TestCase):
         )
         self.assertEqual(client.chat.completions.create.call_count, 2)
         self.assertNotIn("regarding", result["content"].lower())
-        self.assertEqual(result["labels"], ["Tapanuli", "Wisata & Kuliner"])
+        self.assertEqual(result["labels"], ["Taput", "Wisata & Kuliner"])
 
     def test_parse_json_response_cleans_think_tags_and_trailing_commas(self):
         raw_with_think = (

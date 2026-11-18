@@ -119,6 +119,24 @@ class TestRelevance(unittest.TestCase):
         self.assertEqual(len(narkoba_item.get("clustered_sources", [])), 1)
         self.assertEqual(narkoba_item["clustered_sources"][0]["source_media"], "Media B")
 
+    def test_detect_candidate_labels_geo_and_mandatory_hukrimpol(self):
+        from boaboa.relevance import detect_candidate_labels
+
+        labels1 = detect_candidate_labels("Polda Sumut Tangkap Pelaku Begal di Belawan")
+        self.assertIn("Medan", labels1)
+        self.assertIn("Polda Sumut", labels1)
+        self.assertIn("Kriminalitas", labels1)
+        self.assertIn("Hukrimpol", labels1)
+
+        labels2 = detect_candidate_labels("Festival Danau Toba dan Kuliner Andaliman di Balige")
+        self.assertIn("Toba", labels2)
+        self.assertIn("Wisata & Kuliner", labels2)
+        self.assertNotIn("Hukrimpol", labels2)
+
+        labels3 = detect_candidate_labels("Panen Raya Padi dan Harga Beras di Kisaran Asahan")
+        self.assertIn("Asahan", labels3)
+        self.assertIn("Ekobis", labels3)
+
 
 if __name__ == "__main__":
     unittest.main()
