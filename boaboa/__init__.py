@@ -1,0 +1,1 @@
+"""BoaBoa Auto News package."""
