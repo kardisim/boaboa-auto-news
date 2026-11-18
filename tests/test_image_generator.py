@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from boaboa.image_generator import (
@@ -49,6 +50,13 @@ class TestImageGenerator(unittest.TestCase):
             or result["url"].startswith("https://image.pollinations.ai/prompt/")
         )
         self.assertEqual(result["caption"], "Ilustrasi: Dokumentasi Konseptual Redaksi BoaBoa")
+        # Bersihkan file pengujian agar generated_images/ tetap bersih
+        local_path = result.get("local_path")
+        if local_path and os.path.exists(local_path):
+            try:
+                os.remove(local_path)
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
