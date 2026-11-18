@@ -1,6 +1,6 @@
 import os
 
-BLOG_ID = os.environ.get("BLOGGER_BLOG_ID", "").strip() or "8246962934959454683"
+BLOG_ID = os.environ.get("BLOGGER_BLOG_ID", "").strip() or "8826247154815720532"
 PUBLISH_AS_DRAFT = True  # Wajib dikirim ke Blogger sebagai Draft, dilarang auto-publish
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()

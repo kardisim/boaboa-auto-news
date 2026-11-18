@@ -138,7 +138,7 @@ Agar bot dapat berjalan otomatis di GitHub Actions, atur konfigurasi berikut di 
 ### Variables (Opsional)
 | Nama Variabel | Default | Deskripsi |
 | :--- | :--- | :--- |
-| `BLOGGER_BLOG_ID` | `8246962934959454683` | ID Blog Blogger boaboa.bataktive.com |
+| `BLOGGER_BLOG_ID` | `8826247154815720532` | ID Blog Blogger boaboa.bataktive.com |
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Model Gemini yang digunakan |
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Model Groq yang digunakan |
 | `MAX_POSTS_PER_RUN`| `5` | Batas maksimum artikel per run |
