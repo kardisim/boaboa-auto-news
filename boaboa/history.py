@@ -95,7 +95,7 @@ def titles_similar(title_a: str, title_b: str, threshold: float = 0.55) -> bool:
 
 def load_history(history_file: str = HISTORY_FILE) -> list:
     if os.path.exists(history_file):
-        with open(history_file, "r", encoding="utf-8") as f:
+        with open(history_file, "r", encoding="utf-8-sig") as f:
             data = json.load(f)
             if isinstance(data, list):
                 return data
