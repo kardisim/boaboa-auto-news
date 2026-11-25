@@ -201,6 +201,45 @@ RSS_URLS = [
         "base_score": 3,
         "tier": 2,
     },
+    # --- Media Lokal Sumatera Utara (RSS Langsung) ---
+    {
+        "name": "Hetanews - Berita Harian Sumut",
+        "url": "https://www.hetanews.com/feed",
+        "base_score": 5,
+        "tier": 1,
+    },
+    {
+        "name": "SumutPos - Harian Sumatera Utara",
+        "url": "https://www.sumutpos.co/feed",
+        "base_score": 5,
+        "tier": 1,
+    },
+    {
+        "name": "Mataberita.id - Portal Berita Sumut",
+        "url": "https://www.mataberita.id/feed",
+        "base_score": 4,
+        "tier": 1,
+    },
+    # --- Media Nasional dengan Konten Sumut (RSS Langsung) ---
+    {
+        "name": "Tribunnews - Berita Nasional & Regional",
+        "url": "https://www.tribunnews.com/rss",
+        "base_score": 3,
+        "tier": 2,
+    },
+    # --- Media Lokal Sumut via Google News site: filter (tidak punya RSS langsung) ---
+    {
+        "name": "Tier 1 - Waspada, HarianSIB & BeritaSumut (site filter)",
+        "url": "https://news.google.com/rss/search?q=(site:waspada.id+OR+site:hariansib.com+OR+site:beritasumut.com)+when:24h&hl=id&gl=ID&ceid=ID:id",
+        "base_score": 5,
+        "tier": 1,
+    },
+    {
+        "name": "Tier 1 - MedanBisnis, GoSumut & Tribunnews Medan (site filter)",
+        "url": "https://news.google.com/rss/search?q=(site:medanbisnisdaily.com+OR+site:gosumut.com+OR+site:medan.tribunnews.com)+when:24h&hl=id&gl=ID&ceid=ID:id",
+        "base_score": 5,
+        "tier": 1,
+    },
 ]
 
 # Targeted Query Feeds Berdasarkan Zona Daerah, Rubrik Khusus, & Institusional
